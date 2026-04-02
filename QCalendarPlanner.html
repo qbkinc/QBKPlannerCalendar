@@ -1005,26 +1005,26 @@ hr { border: none; border-top: 1px solid var(--border); }
 .vis-pill input { display: none; }
 .vis-pill-dot { width: 7px; height: 7px; border-radius: 50%; }
 
-/* ── DROPBOX ── */
-#dbx-status {
+/* ── GOOGLE DRIVE ── */
+#gdrive-status {
   display: flex; align-items: center; gap: 7px;
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: 20px; padding: 4px 12px 4px 8px;
   font-size: 11px; cursor: pointer; transition: border-color .15s; white-space: nowrap;
 }
-#dbx-status:hover { border-color: #0061ff; }
-.dbx-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.dbx-dot.connected { background: var(--success); }
-.dbx-dot.syncing { background: var(--warning); animation: dbxpulse .8s infinite; }
-.dbx-dot.error { background: var(--danger); }
-.dbx-dot.disconnected { background: var(--border); }
-@keyframes dbxpulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-.dbx-setup-section { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px; }
-.dbx-setup-step { display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; font-size:13px; }
-.dbx-step-num { width:22px;height:22px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px; }
-.dbx-step-text { flex:1; line-height:1.5; color:var(--text2); }
-.dbx-step-text strong { color:var(--text); }
-.dbx-link { color:var(--accent2); text-decoration:underline; cursor:pointer; }
+#gdrive-status:hover { border-color: #4285f4; }
+.gdrive-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.gdrive-dot.connected { background: var(--success); }
+.gdrive-dot.syncing { background: var(--warning); animation: gdrivepulse .8s infinite; }
+.gdrive-dot.error { background: var(--danger); }
+.gdrive-dot.disconnected { background: var(--border); }
+@keyframes gdrivepulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.gdrive-setup-section { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px; }
+.gdrive-setup-step { display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; font-size:13px; }
+.gdrive-step-num { width:22px;height:22px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px; }
+.gdrive-step-text { flex:1; line-height:1.5; color:var(--text2); }
+.gdrive-step-text strong { color:var(--text); }
+.gdrive-link { color:var(--accent2); text-decoration:underline; cursor:pointer; }
 .sync-log { max-height:120px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;font-family:monospace;color:var(--text2);margin-top:8px; }
 .sync-log-entry { margin-bottom:3px; }
 .sync-log-entry.ok { color:var(--success); }
@@ -1140,9 +1140,9 @@ hr { border: none; border-top: 1px solid var(--border); }
       </div>
       <h1 id="current-period"></h1>
       <div id="view-title"></div>
-      <div id="dbx-status" onclick="showModal('dropbox')">
-        <div class="dbx-dot disconnected" id="dbx-dot"></div>
-        <span id="dbx-label">Dropbox</span>
+      <div id="gdrive-status" onclick="showModal('gdrive')">
+        <div class="gdrive-dot disconnected" id="gdrive-dot"></div>
+        <span id="gdrive-label">Google Drive</span>
       </div>
       <div id="user-chip" onclick="showUserMenu()">
         <div class="chip-avatar" id="chip-avatar"></div>
@@ -1396,16 +1396,16 @@ hr { border: none; border-top: 1px solid var(--border); }
     </div>
   </div>
 
-  <!-- Dropbox Modal -->
-  <div id="modal-dropbox" class="modal modal-wide">
+  <!-- Google Drive Modal -->
+  <div id="modal-gdrive" class="modal modal-wide">
     <div class="modal-header">
-      <h2>Dropbox Integration</h2>
+      <h2>Google Drive Integration</h2>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body" id="dbx-modal-body">
-      <!-- populated by initDropboxModal() -->
+    <div class="modal-body" id="gdrive-modal-body">
+      <!-- populated by initGDriveModal() -->
     </div>
-    <div class="modal-footer" id="dbx-modal-footer">
+    <div class="modal-footer" id="gdrive-modal-footer">
       <button class="btn-secondary" onclick="closeModal()">Close</button>
     </div>
   </div>
@@ -1445,12 +1445,19 @@ hr { border: none; border-top: 1px solid var(--border); }
 
 const STORAGE_KEY = 'calendarData';
 
-// Dropbox config — initialized early so saveStorage can reference it
-const DBX_KEY = 'dbxConfig';
-const DBX_DATA_PATH = '/_Planning Calendar/QCalendarPlanner/data.json';
-const DBX_USERS_PATH = '/_Planning Calendar/QCalendarPlanner/users.json';
-let dbxConfig = (() => { try { return JSON.parse(localStorage.getItem(DBX_KEY)) || {}; } catch { return {}; } })();
-function saveDbxConfig() { localStorage.setItem(DBX_KEY, JSON.stringify(dbxConfig)); }
+// Google Drive config — initialized early so saveStorage can reference it
+// !! FILL THESE IN before deploying !!
+const GDRIVE_CLIENT_ID     = '746439353447-24u8v6nbg8d2r76abdukc7o0e40gsrop.apps.googleusercontent.com';
+const GDRIVE_CLIENT_SECRET = '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';
+const GDRIVE_REDIRECT_URI  = 'https://qbkinc.github.io/QBKPlannerCalendar/QCalendarPlanner.html'; // e.g. https://yoursite.com/QCalendarPlanner.html
+
+const GDRIVE_KEY      = 'gdriveConfig';
+const GDRIVE_DATA_FILE  = 'QCalendarPlanner_data.json';
+const GDRIVE_USERS_FILE = 'QCalendarPlanner_users.json';
+const GDRIVE_FOLDER_NAME = 'QCalendarPlanner';
+
+let gdriveConfig = (() => { try { return JSON.parse(localStorage.getItem(GDRIVE_KEY)) || {}; } catch { return {}; } })();
+function saveGdriveConfig() { localStorage.setItem(GDRIVE_KEY, JSON.stringify(gdriveConfig)); }
 
 function loadData() {
   try {
@@ -1461,10 +1468,10 @@ function loadData() {
 
 function saveStorage(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  // Debounced Dropbox push — 2s after last change
-  if (dbxConfig && dbxConfig.accessToken) {
+  // Debounced Google Drive push — 2s after last change
+  if (gdriveConfig && gdriveConfig.access_token) {
     clearTimeout(saveStorage._timer);
-    saveStorage._timer = setTimeout(syncToDropbox, 2000);
+    saveStorage._timer = setTimeout(syncToGDrive, 2000);
   }
 }
 saveStorage._timer = null;
@@ -2002,7 +2009,7 @@ function showModal(name) {
   if (name === 'pdfReport') initPdfModal();
   if (name === 'rollover') initRolloverModal();
   if (name === 'manageUsers') initManageUsersModal();
-  if (name === 'dropbox') initDropboxModal();
+  if (name === 'gdrive') initGDriveModal();
 }
 
 function closeModal(e) {
@@ -2850,10 +2857,10 @@ function loadUsers() {
 
 function saveUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  // Debounced Dropbox push
-  if (dbxConfig && dbxConfig.accessToken) {
+  // Debounced Google Drive push
+  if (gdriveConfig && gdriveConfig.access_token) {
     clearTimeout(saveUsers._timer);
-    saveUsers._timer = setTimeout(syncToDropbox, 2000);
+    saveUsers._timer = setTimeout(syncToGDrive, 2000);
   }
 }
 saveUsers._timer = null;
@@ -2954,12 +2961,12 @@ function bootApp() {
   attachDropZoneListeners();
   attachDayDetailListeners();
   applyPermissions();
-  // Restore Dropbox connection status
-  if (dbxConfig.accessToken) {
-    updateDbxStatus('connected', 'Connected');
-    syncFromDropbox(); // pull latest data on login
+  // Restore Google Drive connection status
+  if (gdriveConfig.access_token) {
+    updateGDriveStatus('connected', 'Connected');
+    syncFromGDrive(); // pull latest data on login
   } else {
-    updateDbxStatus('disconnected', 'Dropbox');
+    updateGDriveStatus('disconnected', 'Google Drive');
   }
   // Restrict activeFilters to visible categories
   activeFilters = new Set(DB.categories.filter(c => canSeeCategory(c.code)).map(c => c.code));
@@ -3297,298 +3304,437 @@ function deleteUser(id) {
   showToast('User deleted', 'error');
 }
 
-// ── DROPBOX INTEGRATION ──────────────────────────────────────
+// ── GOOGLE DRIVE INTEGRATION ─────────────────────────────────
+//
+// Config constants (GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET,
+// GDRIVE_REDIRECT_URI, GDRIVE_KEY, gdriveConfig, saveGdriveConfig)
+// are defined near the top of the script.
 
-// (DBX_KEY, DBX_DATA_PATH, DBX_USERS_PATH, dbxConfig, saveDbxConfig defined at top)
+// ── OAuth Flow ────────────────────────────────────────────────
 
-// ── Dropbox Token Setup ───────────────────────────────────────
-// Uses a manually generated long-lived access token from the Dropbox developer console.
-// No OAuth redirects needed — works with local files, Dropbox-hosted files, anywhere.
+function startGoogleOAuth() {
+  if (!currentUser) return;
+  // Save userId so we can restore it after the OAuth redirect returns
+  sessionStorage.setItem('gdrive_pending_user', currentUser.id);
+  const params = new URLSearchParams({
+    client_id:     GDRIVE_CLIENT_ID,
+    redirect_uri:  GDRIVE_REDIRECT_URI,
+    response_type: 'code',
+    scope:         'https://www.googleapis.com/auth/drive.file',
+    access_type:   'offline',
+    prompt:        'consent',   // ensures refresh_token is always returned
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
 
-async function connectWithToken(token) {
-  if (!token) { showToast('Please paste your access token', 'error'); return; }
-  updateDbxStatus('syncing', 'Verifying...');
-  dbxLog('Verifying token with Dropbox...', 'info');
-
+async function handleGoogleOAuthCallback(code) {
   try {
-    const resp = await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
+    gdriveLog('Exchanging authorization code for tokens...', 'info');
+    updateGDriveStatus('syncing', 'Connecting...');
+
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: 'null'
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id:     GDRIVE_CLIENT_ID,
+        client_secret: GDRIVE_CLIENT_SECRET,
+        redirect_uri:  GDRIVE_REDIRECT_URI,
+        grant_type:    'authorization_code',
+      }),
     });
 
     if (!resp.ok) {
-      let errDetail = resp.status + ' ' + resp.statusText;
-      try { const e = await resp.json(); errDetail += ': ' + (e.error_summary || JSON.stringify(e)); } catch(e2) {}
-      dbxLog('Token verification failed — ' + errDetail, 'err');
-      dbxLog('Check: is the token correct? Did you Submit permissions before generating?', 'err');
-      updateDbxStatus('error', 'Invalid token');
-      initDropboxModal();
-      return;
+      const err = await resp.json();
+      throw new Error(err.error_description || 'Token exchange failed');
     }
 
-    const acct = await resp.json();
-    dbxConfig.accessToken = token;
-    dbxConfig.accountName = acct.name ? acct.name.display_name : '';
-    delete dbxConfig.tokenExpiry;
-    saveDbxConfig();
-    dbxLog('✓ Token verified — connected as ' + (dbxConfig.accountName || 'Dropbox user'), 'ok');
-    updateDbxStatus('connected', 'Connected');
+    const tokens = await resp.json();
+    // Merge carefully — refresh_token only arrives on first consent
+    const existing = gdriveConfig;
+    gdriveConfig = Object.assign({}, existing, {
+      access_token:  tokens.access_token,
+      refresh_token: tokens.refresh_token || existing.refresh_token || null,
+      expires_at:    Date.now() + (tokens.expires_in - 60) * 1000,
+    });
+    saveGdriveConfig();
 
-    dbxLog('Creating /_Planning Calendar/QCalendarPlanner/ folder if needed...', 'info');
-    await ensureDropboxFolder();
+    // Verify and get account info
+    const me = await gdriveApiFetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json');
+    gdriveConfig.accountEmail = me.email || '';
+    saveGdriveConfig();
 
-    dbxLog('Checking for existing data.json...', 'info');
-    await syncFromDropbox();
-    initDropboxModal();
+    gdriveLog('✓ Connected as ' + (gdriveConfig.accountEmail || 'Google user'), 'ok');
+    updateGDriveStatus('connected', 'Connected');
+
+    gdriveLog('Ensuring QCalendarPlanner folder exists...', 'info');
+    await ensureGDriveFolder();
+
+    gdriveLog('Checking for existing data files...', 'info');
+    await syncFromGDrive();
+    initGDriveModal();
   } catch(e) {
-    dbxLog('Network error: ' + e.message, 'err');
-    dbxLog('If running from a local file, try opening the app from a web server or Dropbox shared link instead.', 'err');
-    updateDbxStatus('error', 'Network error');
-    initDropboxModal();
+    gdriveLog('OAuth error: ' + e.message, 'err');
+    updateGDriveStatus('error', 'Auth failed');
+    initGDriveModal();
   }
 }
 
-async function getValidToken() {
-  if (!dbxConfig.accessToken) return null;
-  return dbxConfig.accessToken;
+// ── Token Management ──────────────────────────────────────────
+
+async function getValidAccessToken() {
+  if (!gdriveConfig.access_token) throw new Error('Google Drive not connected');
+
+  if (Date.now() >= (gdriveConfig.expires_at || 0)) {
+    // Access token expired — refresh it
+    if (!gdriveConfig.refresh_token) {
+      gdriveConfig = {};
+      saveGdriveConfig();
+      updateGDriveStatus('disconnected', 'Google Drive');
+      throw new Error('Google Drive session expired — please reconnect');
+    }
+
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id:     GDRIVE_CLIENT_ID,
+        client_secret: GDRIVE_CLIENT_SECRET,
+        refresh_token: gdriveConfig.refresh_token,
+        grant_type:    'refresh_token',
+      }),
+    });
+
+    if (!resp.ok) {
+      gdriveConfig = {};
+      saveGdriveConfig();
+      updateGDriveStatus('disconnected', 'Google Drive');
+      throw new Error('Session expired — please reconnect Google Drive');
+    }
+
+    const fresh = await resp.json();
+    gdriveConfig.access_token = fresh.access_token;
+    gdriveConfig.expires_at   = Date.now() + (fresh.expires_in - 60) * 1000;
+    saveGdriveConfig();
+  }
+
+  return gdriveConfig.access_token;
 }
 
-// ── Dropbox file ops ─────────────────────────────────────────
+// ── Drive API helpers ─────────────────────────────────────────
 
-async function dbxUpload(path, content) {
-  const token = await getValidToken();
-  if (!token) throw new Error('Not authenticated — token missing');
-  const resp = await fetch('https://content.dropboxapi.com/2/files/upload', {
-    method: 'POST',
+async function gdriveApiFetch(url, options = {}) {
+  const token = await getValidAccessToken();
+  const resp = await fetch(url, {
+    ...options,
     headers: {
       'Authorization': 'Bearer ' + token,
-      'Content-Type': 'application/octet-stream',
-      'Dropbox-API-Arg': JSON.stringify({ path, mode: 'overwrite', autorename: false, mute: true })
+      ...(options.headers || {}),
     },
-    body: content
   });
   if (!resp.ok) {
     let detail = resp.status + ' ' + resp.statusText;
-    try { const e = await resp.json(); detail += ' — ' + (e.error_summary || JSON.stringify(e)); } catch(e2) {}
+    try { const e = await resp.json(); detail += ' — ' + (e.error?.message || JSON.stringify(e)); } catch(e2) {}
+    throw new Error(detail);
+  }
+  const ct = resp.headers.get('content-type') || '';
+  if (ct.includes('application/json')) return resp.json();
+  return resp.text();
+}
+
+async function ensureGDriveFolder() {
+  // Search for existing folder
+  const q = encodeURIComponent(
+    `name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+  );
+  const res = await gdriveApiFetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`
+  );
+  if (res.files && res.files.length > 0) {
+    gdriveConfig.folderId = res.files[0].id;
+    saveGdriveConfig();
+    gdriveLog('✓ Folder found: ' + GDRIVE_FOLDER_NAME, 'ok');
+    return gdriveConfig.folderId;
+  }
+  // Create it
+  const token = await getValidAccessToken();
+  const resp = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: GDRIVE_FOLDER_NAME,
+      mimeType: 'application/vnd.google-apps.folder',
+    }),
+  });
+  if (!resp.ok) throw new Error('Could not create Drive folder');
+  const folder = await resp.json();
+  gdriveConfig.folderId = folder.id;
+  saveGdriveConfig();
+  gdriveLog('✓ Created folder: ' + GDRIVE_FOLDER_NAME, 'ok');
+  return folder.id;
+}
+
+async function gdriveGetFileId(filename) {
+  if (!gdriveConfig.folderId) await ensureGDriveFolder();
+  const q = encodeURIComponent(
+    `name='${filename}' and '${gdriveConfig.folderId}' in parents and trashed=false`
+  );
+  const res = await gdriveApiFetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`
+  );
+  return (res.files && res.files.length > 0) ? res.files[0].id : null;
+}
+
+async function gdriveUploadFile(filename, content) {
+  const token = await getValidAccessToken();
+  if (!gdriveConfig.folderId) await ensureGDriveFolder();
+
+  const existingId = await gdriveGetFileId(filename);
+  const metadata = { name: filename };
+  const blob = new Blob([content], { type: 'application/json' });
+
+  let url, method;
+  if (existingId) {
+    // Update existing file
+    url = `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`;
+    method = 'PATCH';
+  } else {
+    // Create new file in folder
+    metadata.parents = [gdriveConfig.folderId];
+    url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    method = 'POST';
+  }
+
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', blob);
+
+  const resp = await fetch(url, {
+    method,
+    headers: { 'Authorization': 'Bearer ' + token },
+    body: form,
+  });
+  if (!resp.ok) {
+    let detail = resp.status + ' ' + resp.statusText;
+    try { const e = await resp.json(); detail += ' — ' + (e.error?.message || JSON.stringify(e)); } catch(e2) {}
     throw new Error('Upload failed: ' + detail);
   }
   return resp.json();
 }
 
-async function dbxDownload(path) {
-  const token = await getValidToken();
-  if (!token) throw new Error('Not authenticated — token missing');
-  const resp = await fetch('https://content.dropboxapi.com/2/files/download', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + token,
-      'Dropbox-API-Arg': JSON.stringify({ path })
-    }
-  });
-  if (resp.status === 409) return null; // file not found — first time
-  if (!resp.ok) {
-    let detail = resp.status + ' ' + resp.statusText;
-    try { const e = await resp.json(); detail += ' — ' + (e.error_summary || JSON.stringify(e)); } catch(e2) {}
-    throw new Error('Download failed: ' + detail);
-  }
-  return resp.text();
+async function gdriveDownloadFile(filename) {
+  const fileId = await gdriveGetFileId(filename);
+  if (!fileId) return null; // file doesn't exist yet — first run
+  return gdriveApiFetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`
+  );
 }
 
-async function dbxCreateFolder(path) {
-  const token = await getValidToken();
-  if (!token) return;
-  try {
-    const resp = await fetch('https://api.dropboxapi.com/2/files/create_folder_v2', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, autorename: false })
-    });
-    if (resp.ok) dbxLog('✓ Folder /QCalendarPlanner/ ready', 'ok');
-    // 409 = folder already exists, that's fine
-  } catch(e) {
-    dbxLog('Folder create warning: ' + e.message, 'info');
-  }
-}
-
-async function ensureDropboxFolder() {
-  await dbxCreateFolder('/_Planning Calendar');
-  await dbxCreateFolder('/_Planning Calendar/QCalendarPlanner');
-}
-
-// ── Sync logic ────────────────────────────────────────────────
+// ── Sync Logic ────────────────────────────────────────────────
 
 let syncInProgress = false;
 
-async function syncToDropbox() {
-  if (syncInProgress || !dbxConfig.accessToken) return;
+async function syncToGDrive() {
+  if (syncInProgress || !gdriveConfig.access_token) return;
   syncInProgress = true;
-  updateDbxStatus('syncing', 'Saving...');
+  updateGDriveStatus('syncing', 'Saving...');
   try {
-    dbxLog('Uploading data.json...', 'info');
-    await dbxUpload(DBX_DATA_PATH, JSON.stringify(DB, null, 2));
-    dbxLog('✓ data.json saved', 'ok');
+    gdriveLog('Uploading ' + GDRIVE_DATA_FILE + '...', 'info');
+    await gdriveUploadFile(GDRIVE_DATA_FILE, JSON.stringify(DB, null, 2));
+    gdriveLog('✓ ' + GDRIVE_DATA_FILE + ' saved', 'ok');
 
-    dbxLog('Uploading users.json...', 'info');
-    await dbxUpload(DBX_USERS_PATH, JSON.stringify(USERS, null, 2));
-    dbxLog('✓ users.json saved', 'ok');
+    gdriveLog('Uploading ' + GDRIVE_USERS_FILE + '...', 'info');
+    await gdriveUploadFile(GDRIVE_USERS_FILE, JSON.stringify(USERS, null, 2));
+    gdriveLog('✓ ' + GDRIVE_USERS_FILE + ' saved', 'ok');
 
-    dbxConfig.lastSync = new Date().toISOString();
-    saveDbxConfig();
-    updateDbxStatus('connected', 'Synced ' + new Date().toLocaleTimeString());
+    gdriveConfig.lastSync = new Date().toISOString();
+    saveGdriveConfig();
+    updateGDriveStatus('connected', 'Synced ' + new Date().toLocaleTimeString());
   } catch(e) {
-    dbxLog('Save error: ' + e.message, 'err');
-    updateDbxStatus('error', 'Save failed');
+    gdriveLog('Save error: ' + e.message, 'err');
+    updateGDriveStatus('error', 'Save failed');
   }
   syncInProgress = false;
 }
 
-async function syncFromDropbox() {
-  if (!dbxConfig.accessToken) return;
-  updateDbxStatus('syncing', 'Loading...');
-  dbxLog('Loading data from Dropbox...', 'info');
+async function syncFromGDrive() {
+  if (!gdriveConfig.access_token) return;
+  updateGDriveStatus('syncing', 'Loading...');
+  gdriveLog('Loading data from Google Drive...', 'info');
   try {
     const [dataRaw, usersRaw] = await Promise.all([
-      dbxDownload(DBX_DATA_PATH),
-      dbxDownload(DBX_USERS_PATH)
+      gdriveDownloadFile(GDRIVE_DATA_FILE),
+      gdriveDownloadFile(GDRIVE_USERS_FILE),
     ]);
 
     if (dataRaw) {
-      const remoteDB = JSON.parse(dataRaw);
+      const remoteDB = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
       if (remoteDB.events !== undefined) {
         DB = remoteDB;
         saveStorage(DB);
-        dbxLog('✓ Calendar data loaded', 'ok');
+        gdriveLog('✓ Calendar data loaded', 'ok');
       }
     } else {
-      // First time — push local data up
-      await dbxUpload(DBX_DATA_PATH, JSON.stringify(DB, null, 2));
-      dbxLog('✓ Initial data uploaded to Dropbox', 'ok');
+      await gdriveUploadFile(GDRIVE_DATA_FILE, JSON.stringify(DB, null, 2));
+      gdriveLog('✓ Initial data uploaded to Drive', 'ok');
     }
 
     if (usersRaw) {
-      const remoteUsers = JSON.parse(usersRaw);
+      const remoteUsers = typeof usersRaw === 'string' ? JSON.parse(usersRaw) : usersRaw;
       if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
         USERS = remoteUsers;
         saveUsers(USERS);
-        dbxLog('✓ Users loaded', 'ok');
+        gdriveLog('✓ Users loaded', 'ok');
       }
     } else {
-      await dbxUpload(DBX_USERS_PATH, JSON.stringify(USERS, null, 2));
-      dbxLog('✓ Initial users uploaded to Dropbox', 'ok');
+      await gdriveUploadFile(GDRIVE_USERS_FILE, JSON.stringify(USERS, null, 2));
+      gdriveLog('✓ Initial users uploaded to Drive', 'ok');
     }
 
-    dbxConfig.lastSync = new Date().toISOString();
-    saveDbxConfig();
-    updateDbxStatus('connected', 'Synced ' + new Date().toLocaleTimeString());
+    gdriveConfig.lastSync = new Date().toISOString();
+    saveGdriveConfig();
+    updateGDriveStatus('connected', 'Synced ' + new Date().toLocaleTimeString());
 
-    // Refresh UI with new data
+    // Refresh UI with synced data
     activeFilters = new Set(DB.categories.filter(c => canSeeCategory(c.code)).map(c => c.code));
     renderGroupFilters();
     renderCategoryFilters();
     render();
   } catch(e) {
-    dbxLog('Load error: ' + e.message, 'err');
-    updateDbxStatus('error', 'Load failed');
+    gdriveLog('Load error: ' + e.message, 'err');
+    updateGDriveStatus('error', 'Load failed');
   }
 }
 
-function disconnectDropbox() {
-  if (!confirm('Disconnect Dropbox? Your local data will remain.')) return;
-  dbxConfig = {};
-  saveDbxConfig();
-  updateDbxStatus('disconnected', 'Dropbox');
-  dbxLog('Disconnected from Dropbox', 'info');
-  initDropboxModal();
+function disconnectGDrive() {
+  if (!confirm('Disconnect Google Drive? Your local data will remain.')) return;
+  gdriveConfig = {};
+  saveGdriveConfig();
+  updateGDriveStatus('disconnected', 'Google Drive');
+  gdriveLog('Disconnected from Google Drive', 'info');
+  initGDriveModal();
 }
 
-// ── Dropbox UI helpers ────────────────────────────────────────
+// ── Google Drive UI helpers ───────────────────────────────────
 
-const dbxSyncLog = [];
+const gdriveSyncLog = [];
 
-function dbxLog(msg, type = 'info') {
-  dbxSyncLog.push({ msg, type, time: new Date().toLocaleTimeString() });
-  if (dbxSyncLog.length > 50) dbxSyncLog.shift();
-  const el = document.getElementById('dbx-sync-log');
-  if (el) el.innerHTML = dbxSyncLog.slice().reverse().map(e =>
+function gdriveLog(msg, type = 'info') {
+  gdriveSyncLog.push({ msg, type, time: new Date().toLocaleTimeString() });
+  if (gdriveSyncLog.length > 50) gdriveSyncLog.shift();
+  const el = document.getElementById('gdrive-sync-log');
+  if (el) el.innerHTML = gdriveSyncLog.slice().reverse().map(e =>
     `<div class="sync-log-entry ${e.type}">[${e.time}] ${e.msg}</div>`
   ).join('');
 }
 
-function updateDbxStatus(state, label) {
-  const dot = document.getElementById('dbx-dot');
-  const lbl = document.getElementById('dbx-label');
-  if (dot) { dot.className = 'dbx-dot ' + state; }
-  if (lbl) lbl.textContent = label || 'Dropbox';
+function updateGDriveStatus(state, label) {
+  const dot = document.getElementById('gdrive-dot');
+  const lbl = document.getElementById('gdrive-label');
+  if (dot) { dot.className = 'gdrive-dot ' + state; }
+  if (lbl) lbl.textContent = label || 'Google Drive';
 }
 
-function initDropboxModal() {
-  const body = document.getElementById('dbx-modal-body');
-  const footer = document.getElementById('dbx-modal-footer');
+function initGDriveModal() {
+  const body   = document.getElementById('gdrive-modal-body');
+  const footer = document.getElementById('gdrive-modal-footer');
   if (!body) return;
 
-  const isConnected = !!dbxConfig.accessToken;
+  const isConnected = !!gdriveConfig.access_token;
 
   if (isConnected) {
     body.innerHTML = `
-      <div class="dbx-setup-section" style="border-color:var(--success)">
+      <div class="gdrive-setup-section" style="border-color:var(--success)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <div class="dbx-dot connected" style="width:10px;height:10px"></div>
-          <strong style="color:var(--success)">Connected to Dropbox</strong>
-          ${dbxConfig.accountName ? `<span style="font-size:12px;color:var(--text2);margin-left:4px">— ${dbxConfig.accountName}</span>` : ''}
+          <div class="gdrive-dot connected" style="width:10px;height:10px"></div>
+          <strong style="color:var(--success)">Connected to Google Drive</strong>
+          ${gdriveConfig.accountEmail ? `<span style="font-size:12px;color:var(--text2);margin-left:4px">— ${gdriveConfig.accountEmail}</span>` : ''}
         </div>
-        <div style="font-size:12px;color:var(--text2)">Data file: <code style="color:var(--text)">${DBX_DATA_PATH}</code></div>
-        ${dbxConfig.lastSync ? `<div style="font-size:12px;color:var(--text2);margin-top:4px">Last sync: ${new Date(dbxConfig.lastSync).toLocaleString()}</div>` : ''}
+        <div style="font-size:12px;color:var(--text2)">Folder: <code style="color:var(--text)">${GDRIVE_FOLDER_NAME}/</code></div>
+        <div style="font-size:12px;color:var(--text2)">Files: <code style="color:var(--text)">${GDRIVE_DATA_FILE}</code>, <code style="color:var(--text)">${GDRIVE_USERS_FILE}</code></div>
+        ${gdriveConfig.lastSync ? `<div style="font-size:12px;color:var(--text2);margin-top:4px">Last sync: ${new Date(gdriveConfig.lastSync).toLocaleString()}</div>` : ''}
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-        <button class="btn-primary" onclick="syncToDropbox().then(()=>initDropboxModal())">↑ Push All Data Now</button>
-        <button class="btn-primary" onclick="syncFromDropbox().then(()=>initDropboxModal())">↓ Pull from Dropbox</button>
-        <button class="btn-secondary" onclick="disconnectDropbox()">Disconnect</button>
+        <button class="btn-primary" onclick="syncToGDrive().then(()=>initGDriveModal())">↑ Push All Data Now</button>
+        <button class="btn-primary" onclick="syncFromGDrive().then(()=>initGDriveModal())">↓ Pull from Drive</button>
+        <button class="btn-secondary" onclick="disconnectGDrive()">Disconnect</button>
       </div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Sync log:</div>
-      <div class="sync-log" id="dbx-sync-log">${dbxSyncLog.slice().reverse().map(e=>`<div class="sync-log-entry ${e.type}">[${e.time}] ${e.msg}</div>`).join('')}</div>
+      <div class="sync-log" id="gdrive-sync-log">${gdriveSyncLog.slice().reverse().map(e=>`<div class="sync-log-entry ${e.type}">[${e.time}] ${e.msg}</div>`).join('')}</div>
     `;
     footer.innerHTML = `<button class="btn-secondary" onclick="closeModal()">Close</button>`;
   } else {
+    const redirectUri = GDRIVE_REDIRECT_URI !== 'YOUR_REDIRECT_URI_HERE'
+      ? GDRIVE_REDIRECT_URI
+      : window.location.href.split('?')[0];
     body.innerHTML = `
-      <p class="modal-desc">Connect to Dropbox to store your calendar data in the cloud. All users you share the app with will read and write to the same <code>data.json</code> file based on their permissions.</p>
+      <p class="modal-desc">Connect to Google Drive to store your calendar data in the cloud. All users you share the app with will read from and write to the same files based on their permissions.</p>
 
-      <div class="dbx-setup-section">
-        <div class="dbx-setup-step">
-          <div class="dbx-step-num">1</div>
-          <div class="dbx-step-text">Go to <a class="dbx-link" href="https://www.dropbox.com/developers/apps" target="_blank">dropbox.com/developers/apps</a> → <strong>Create App</strong> → choose <strong>Scoped access</strong> → <strong>Full Dropbox</strong> → name it anything → click <strong>Create app</strong>.</div>
+      <div class="gdrive-setup-section">
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">1</div>
+          <div class="gdrive-step-text">Go to <a class="gdrive-link" href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> → create or select a project → go to <strong>APIs &amp; Services → Credentials</strong>.</div>
         </div>
-        <div class="dbx-setup-step">
-          <div class="dbx-step-num">2</div>
-          <div class="dbx-step-text">Go to the <strong>Permissions</strong> tab → check <code>files.content.read</code> and <code>files.content.write</code> → click <strong>Submit</strong>.</div>
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">2</div>
+          <div class="gdrive-step-text">Click <strong>Create Credentials → OAuth client ID</strong> → choose <strong>Web application</strong> → add <code>${redirectUri}</code> as an Authorized redirect URI → save and copy your Client ID and Secret.</div>
         </div>
-        <div class="dbx-setup-step">
-          <div class="dbx-step-num">3</div>
-          <div class="dbx-step-text">Go back to the <strong>Settings</strong> tab → scroll to <strong>OAuth 2</strong> → under <em>Generated access token</em>, click <strong>Generate</strong>. Copy the token.</div>
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">3</div>
+          <div class="gdrive-step-text">Enable the <strong>Google Drive API</strong> for your project under <strong>APIs &amp; Services → Library</strong>.</div>
         </div>
-        <div class="dbx-setup-step">
-          <div class="dbx-step-num">4</div>
-          <div class="dbx-step-text">Paste the token below and click <strong>Connect</strong>. The app will verify it and sync your data automatically.</div>
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">4</div>
+          <div class="gdrive-step-text">Paste your Client ID and Secret into the <code>GDRIVE_CLIENT_ID</code> and <code>GDRIVE_CLIENT_SECRET</code> constants near the top of this file's script, then click <strong>Connect</strong> below.</div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label>Dropbox Access Token</label>
-        <input type="password" id="dbx-token-input" placeholder="Paste your generated access token here" style="font-family:monospace;font-size:12px">
-        <div style="font-size:11px;color:var(--text2);margin-top:5px">⚠ Keep this token private — it gives full access to your Dropbox. Each user generates their own token.</div>
-      </div>
+      ${GDRIVE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE' ? `
+        <div style="background:var(--danger);color:#fff;border-radius:6px;padding:10px 14px;font-size:12px;margin-bottom:12px">
+          ⚠ <strong>Setup required:</strong> Open the HTML file in a text editor and fill in <code>GDRIVE_CLIENT_ID</code>, <code>GDRIVE_CLIENT_SECRET</code>, and <code>GDRIVE_REDIRECT_URI</code> before connecting.
+        </div>
+      ` : ''}
     `;
     footer.innerHTML = `
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary" onclick="connectWithToken(document.getElementById('dbx-token-input').value.trim())">Connect</button>
+      <button class="btn-primary" onclick="startGoogleOAuth()" ${GDRIVE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE' ? 'disabled title="Fill in credentials first"' : ''}>Connect Google Drive</button>
     `;
   }
 }
 
 // ── INIT ─────────────────────────────────────────────────────
-
-// Check for existing session
 (async () => {
+  // 1. Handle Google OAuth callback (?code=... returned from Google)
+  const urlParams = new URLSearchParams(window.location.search);
+  const oauthCode = urlParams.get('code');
+  if (oauthCode) {
+    // Strip the code from the URL immediately — auth codes are single-use
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Restore the user who initiated the OAuth flow
+    const pendingUserId = sessionStorage.getItem('gdrive_pending_user');
+    if (pendingUserId) {
+      sessionStorage.removeItem('gdrive_pending_user');
+      const u = USERS.find(u => u.id === pendingUserId);
+      if (u) {
+        currentUser = u;
+        bootApp();
+        await handleGoogleOAuthCallback(oauthCode);
+      } else {
+        // User not found — just exchange token silently (settings-only flow)
+        await handleGoogleOAuthCallback(oauthCode);
+      }
+    } else {
+      // No pending user saved — exchange token anyway (e.g. reconnect from settings)
+      await handleGoogleOAuthCallback(oauthCode);
+    }
+    return;
+  }
+
+  // 2. Normal load — check for existing session
   const sess = getSession();
   if (sess) {
     const u = USERS.find(u => u.id === sess.userId);
