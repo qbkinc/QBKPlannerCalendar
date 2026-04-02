@@ -1,0 +1,3750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q Calendar Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --bg2: #16161a;
+  --bg3: #1e1e24;
+  --border: #2a2a32;
+  --text: #e8e8f0;
+  --text2: #888899;
+  --accent: #6c63ff;
+  --accent2: #9b94ff;
+  --success: #3ecf8e;
+  --danger: #ff4d6d;
+  --warning: #f5a623;
+  --radius: 10px;
+  --sidebar-w: 240px;
+  --shadow: 0 4px 24px rgba(0,0,0,.5);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding-bottom: 8px;
+}
+
+.sidebar-header {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 24px;
+  color: var(--accent2);
+}
+
+.logo-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.logo-sub {
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.nav-section {
+  padding: 12px 8px 4px;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text2);
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
+
+.nav-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text2);
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all .15s;
+}
+
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--accent); color: #fff; }
+
+.nav-icon { font-size: 14px; width: 18px; text-align: center; }
+
+/* Category filter pills */
+#categoryFilters {
+  padding: 4px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cat-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.cat-filter:hover { background: var(--bg3); }
+
+.cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cat-filter-label { color: var(--text2); flex: 1; }
+.cat-filter.active .cat-filter-label { color: var(--text); }
+.cat-filter input { display: none; }
+
+/* ── MAIN ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+
+#nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctrl-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all .15s;
+}
+
+.ctrl-btn:hover { background: var(--accent); border-color: var(--accent); }
+.today-btn { font-size: 12px; padding: 6px 14px; }
+
+#current-period {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  font-weight: 400;
+  flex: 1;
+}
+
+/* ── VIEWS ── */
+.view { display: none; flex: 1; overflow-y: auto; }
+.view.active { display: flex; flex-direction: column; }
+
+/* ── CALENDAR GRID ── */
+.cal-grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+
+.cal-grid-header > div {
+  text-align: center;
+  padding: 10px 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+#cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  flex: 1;
+  padding: 16px 24px;
+  gap: 6px;
+  align-content: start;
+}
+
+.cal-day {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 110px;
+  padding: 8px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  position: relative;
+}
+
+.cal-day:hover {
+  border-color: var(--accent);
+  background: var(--bg3);
+}
+
+.cal-day.other-month { opacity: 0.35; }
+
+.cal-day.today {
+  border-color: var(--accent);
+  background: rgba(108, 99, 255, 0.08);
+}
+
+.day-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+
+.cal-day.today .day-num {
+  color: var(--accent2);
+}
+
+.cal-event {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  cursor: pointer;
+  color: #fff;
+}
+
+.more-events {
+  font-size: 10px;
+  color: var(--text2);
+  padding: 2px 4px;
+}
+
+/* ── WEEK VIEW ── */
+#week-view-content {
+  padding: 16px 24px;
+}
+
+.week-day-block {
+  margin-bottom: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.week-day-header {
+  padding: 10px 16px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.week-day-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.week-day-date {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.week-events { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+.week-event-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.week-event-row:hover { background: var(--bg3); }
+
+.week-event-time { color: var(--text2); min-width: 100px; font-size: 11px; }
+.week-event-cat { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.week-event-title { flex: 1; font-weight: 500; }
+
+.no-events-msg { padding: 10px 16px; color: var(--text2); font-size: 12px; font-style: italic; }
+
+/* ── LIST VIEW ── */
+#list-view-content {
+  padding: 16px 24px;
+}
+
+.list-month-group { margin-bottom: 24px; }
+
+.list-month-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.list-event-row {
+  display: grid;
+  grid-template-columns: 90px 60px 1fr 80px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: background .15s;
+}
+
+.list-event-row:hover { background: var(--bg3); }
+
+.list-event-date { color: var(--text2); font-size: 12px; }
+.list-event-cat-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+  color: #fff;
+}
+.list-event-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.act-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all .15s;
+}
+.act-btn:hover { background: var(--bg3); color: var(--text); }
+.act-btn.del:hover { color: var(--danger); }
+
+/* ── MODALS ── */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 520px;
+  max-width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  display: none;
+}
+
+.modal.modal-wide { width: 700px; }
+
+.modal.active { display: flex; }
+
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.modal-close {
+  background: var(--bg3);
+  border: none;
+  color: var(--text2);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+
+.modal-close:hover { background: var(--danger); color: #fff; }
+
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.modal-desc {
+  color: var(--text2);
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+/* ── FORMS ── */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+select,
+textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  transition: border-color .15s;
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+input[type="color"] {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg3);
+  cursor: pointer;
+  padding: 2px;
+}
+
+textarea { resize: vertical; }
+
+.checkbox-label, .radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+input[type="checkbox"], input[type="radio"] {
+  width: auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.weekday-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekday-picker label {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text2);
+  transition: all .15s;
+}
+
+.weekday-picker label:has(input:checked) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── BUTTONS ── */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-primary:hover { background: var(--accent2); }
+
+.btn-secondary {
+  background: var(--bg3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-secondary:hover { border-color: var(--accent); }
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── CATEGORY MANAGEMENT ── */
+#cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.cat-row-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cat-row-code { font-weight: 700; width: 70px; }
+.cat-row-name { flex: 1; color: var(--text2); }
+.cat-row-group { font-size: 11px; color: var(--text2); width: 80px; }
+
+.cat-del-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 14px;
+  transition: color .15s;
+}
+
+.cat-del-btn:hover { color: var(--danger); }
+
+/* ── IMPORT DROP ZONE ── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.drop-zone:hover { border-color: var(--accent); background: rgba(108,99,255,.04); }
+.drop-icon { font-size: 28px; margin-bottom: 8px; color: var(--text2); }
+.link-text { color: var(--accent2); text-decoration: underline; cursor: pointer; }
+.drop-hint { color: var(--text2); font-size: 11px; margin-top: 6px; }
+
+#importPreview {
+  margin-top: 16px;
+  font-size: 12px;
+}
+
+.import-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.import-table th, .import-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.import-table th {
+  background: var(--bg3);
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+/* ── CATEGORY CHECKBOXES (PDF Report) ── */
+.category-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cat-check-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  transition: all .15s;
+}
+
+.cat-check-label:has(input:checked) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* ── RECURRING RULES LIST ── */
+#recurring-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.rule-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rule-title { font-weight: 600; flex: 1; }
+.rule-freq { color: var(--text2); font-size: 11px; min-width: 80px; }
+.rule-range { color: var(--text2); font-size: 11px; min-width: 160px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all .3s;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: var(--shadow);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.success { border-color: var(--success); color: var(--success); }
+.toast.error { border-color: var(--danger); color: var(--danger); }
+
+/* ── DAY DETAIL ── */
+.day-detail-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.day-detail-event:last-child { border-bottom: none; }
+
+.dde-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.dde-info { flex: 1; }
+.dde-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.dde-time { font-size: 12px; color: var(--text2); }
+.dde-loc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.dde-desc { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.dde-actions { display: flex; gap: 6px; }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+hr { border: none; border-top: 1px solid var(--border); }
+
+/* PDF Print Styles */
+@media print {
+  #sidebar, #topbar, #modal-overlay { display: none !important; }
+  #main { margin: 0; padding: 0; }
+  .view { display: block !important; }
+  body { background: white; color: black; }
+}
+
+/* ── LOGIN SCREEN ── */
+#login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  flex-direction: column;
+}
+
+.login-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 44px;
+  width: 380px;
+  box-shadow: var(--shadow);
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-logo-icon { font-size: 36px; color: var(--accent2); display: block; margin-bottom: 6px; }
+.login-logo-title { font-family: 'DM Serif Display', serif; font-size: 22px; }
+.login-logo-sub { font-size: 11px; color: var(--text2); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+
+.login-error {
+  background: rgba(255,77,109,.12);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  margin-bottom: 14px;
+  display: none;
+}
+
+.login-error.show { display: block; }
+
+.login-footer {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* ── USER MANAGEMENT MODAL ── */
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px; color: #fff;
+  flex-shrink: 0;
+}
+
+.user-info { flex: 1; }
+.user-name { font-weight: 600; }
+.user-role { font-size: 11px; color: var(--text2); }
+
+.user-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.badge-admin { background: rgba(108,99,255,.2); color: var(--accent2); }
+.badge-user  { background: rgba(62,207,142,.12); color: var(--success); }
+
+/* Permission grid */
+.perm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.perm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+
+.perm-item:has(input:checked) { border-color: var(--accent); }
+.perm-item label { cursor: pointer; color: var(--text2); font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 400; margin: 0; }
+.perm-item:has(input:checked) label { color: var(--text); }
+
+/* Section tabs inside user edit */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--bg3);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text2);
+  padding: 7px 0;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.tab-btn.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Current user chip in topbar */
+#user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px 4px 6px;
+  cursor: pointer;
+  transition: border-color .15s;
+  font-size: 12px;
+}
+
+#user-chip:hover { border-color: var(--accent); }
+
+.chip-avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff;
+}
+
+.chip-name { font-weight: 500; }
+
+/* Disabled nav button */
+.nav-btn.perm-hidden { display: none !important; }
+.nav-btn:disabled, .nav-btn.perm-disabled {
+  opacity: 0.3; cursor: not-allowed; pointer-events: none;
+}
+
+/* Cat/group visibility checkboxes in user edit */
+.vis-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.vis-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 4px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all .15s;
+}
+
+.vis-pill:has(input:checked), .vis-pill.vis-checked { border-color: var(--accent); color: var(--text); }
+.vis-pill input { display: none; }
+.vis-pill-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ── GOOGLE DRIVE ── */
+#gdrive-status {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 12px 4px 8px;
+  font-size: 11px; cursor: pointer; transition: border-color .15s; white-space: nowrap;
+}
+#gdrive-status:hover { border-color: #4285f4; }
+.gdrive-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.gdrive-dot.connected { background: var(--success); }
+.gdrive-dot.syncing { background: var(--warning); animation: gdrivepulse .8s infinite; }
+.gdrive-dot.error { background: var(--danger); }
+.gdrive-dot.disconnected { background: var(--border); }
+@keyframes gdrivepulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.gdrive-setup-section { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px; }
+.gdrive-setup-step { display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; font-size:13px; }
+.gdrive-step-num { width:22px;height:22px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px; }
+.gdrive-step-text { flex:1; line-height:1.5; color:var(--text2); }
+.gdrive-step-text strong { color:var(--text); }
+.gdrive-link { color:var(--accent2); text-decoration:underline; cursor:pointer; }
+.sync-log { max-height:120px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;font-family:monospace;color:var(--text2);margin-top:8px; }
+.sync-log-entry { margin-bottom:3px; }
+.sync-log-entry.ok { color:var(--success); }
+.sync-log-entry.err { color:var(--danger); }
+
+/* PDF Print Styles */
+@media print {
+  #sidebar, #topbar, #modal-overlay { display: none !important; }
+  #main { margin: 0; padding: 0; }
+  .view { display: block !important; }
+  body { background: white; color: black; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="login-logo-icon">⬡</span>
+      <div class="login-logo-title">Q Calendar Planner</div>
+      <div class="login-logo-sub">Sign in to continue</div>
+    </div>
+    <div class="login-error" id="login-error">Incorrect username or password.</div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-username" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:4px;padding:10px" onclick="doLogin()">Sign In</button>
+    <div class="login-footer">Contact your administrator if you need access.</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">⬡</div>
+        <div>
+          <div class="logo-title">Q Calendar</div>
+          <div class="logo-sub">Planner</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Views</div>
+      <button class="nav-btn active" data-view="calendar" onclick="switchView('calendar')"><span class="nav-icon">◫</span> Monthly View</button>
+      <button class="nav-btn" data-view="week" onclick="switchView('week')"><span class="nav-icon">☰</span> Weekly View</button>
+      <button class="nav-btn" data-view="list" onclick="switchView('list')"><span class="nav-icon">≡</span> List View</button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Manage</div>
+      <button id="nav-addEvent" class="nav-btn" onclick="showModal('addEvent')"><span class="nav-icon">+</span> Add Event</button>
+      <button id="nav-categories" class="nav-btn" onclick="showModal('categories')"><span class="nav-icon">◈</span> Categories</button>
+      <button id="nav-recurring" class="nav-btn" onclick="showModal('recurring')"><span class="nav-icon">↻</span> Recurring Rules</button>
+      <button id="nav-bulkImport" class="nav-btn" onclick="showModal('bulkImport')"><span class="nav-icon">↑</span> Bulk Import</button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Export &amp; Reports</div>
+      <button id="nav-exportOutlook" class="nav-btn" onclick="exportToOutlook()"><span class="nav-icon">📅</span> Export to Outlook</button>
+      <button id="nav-exportGoogle" class="nav-btn" onclick="exportToGoogle()"><span class="nav-icon">📆</span> Export to Gmail</button>
+      <button id="nav-exportCSV" class="nav-btn" onclick="exportToCSV()"><span class="nav-icon">📊</span> Export to CSV</button>
+      <button id="nav-pdfReport" class="nav-btn" onclick="showModal('pdfReport')"><span class="nav-icon">📄</span> PDF Report</button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Data</div>
+      <button id="nav-manageUsers" class="nav-btn" onclick="showModal('manageUsers')"><span class="nav-icon">👥</span> Manage Users</button>
+      <button id="nav-backup" class="nav-btn" onclick="backupData()"><span class="nav-icon">💾</span> Backup Data</button>
+      <button id="nav-restore" class="nav-btn" onclick="document.getElementById('restoreFile').click()"><span class="nav-icon">↩</span> Restore Backup</button>
+      <button id="nav-rollover" class="nav-btn" onclick="showModal('rollover')"><span class="nav-icon">➜</span> Rollover to Next Year</button>
+      <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreData(event)">
+    </div>
+    <div class="nav-section" style="margin-top:auto;padding-bottom:12px">
+      <button class="nav-btn" onclick="doLogout()" style="color:var(--danger);border:1px solid rgba(255,77,109,.25);border-radius:6px;margin-top:4px">
+        <span class="nav-icon">⏻</span> Sign Out
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label" style="display:flex;align-items:center;justify-content:space-between;padding-right:8px">
+        Filter by Group
+        <span id="group-allnone" style="display:flex;gap:4px">
+          <button onclick="selectAllGroups()" style="background:none;border:none;color:var(--accent2);font-size:10px;cursor:pointer;padding:0">All</button>
+          <span style="color:var(--border)">·</span>
+          <button onclick="clearAllGroups()" style="background:none;border:none;color:var(--text2);font-size:10px;cursor:pointer;padding:0">None</button>
+        </span>
+      </div>
+      <div id="groupFilters" style="padding:4px 8px 8px;display:flex;flex-direction:column;gap:3px"></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label" style="display:flex;align-items:center;justify-content:space-between;padding-right:8px">
+        Filter Categories
+        <span id="cat-allnone" style="display:flex;gap:4px">
+          <button onclick="selectAllCats()" style="background:none;border:none;color:var(--accent2);font-size:10px;cursor:pointer;padding:0">All</button>
+          <span style="color:var(--border)">·</span>
+          <button onclick="clearAllCats()" style="background:none;border:none;color:var(--text2);font-size:10px;cursor:pointer;padding:0">None</button>
+        </span>
+      </div>
+      <div id="categoryFilters"></div>
+    </div>
+  </nav>
+
+  <main id="main">
+    <div id="topbar">
+      <div id="nav-controls">
+        <button class="ctrl-btn" onclick="navigate(-1)">‹</button>
+        <button class="ctrl-btn today-btn" onclick="goToToday()">Today</button>
+        <button class="ctrl-btn" onclick="navigate(1)">›</button>
+      </div>
+      <h1 id="current-period"></h1>
+      <div id="view-title"></div>
+      <div id="gdrive-status" onclick="showModal('gdrive')">
+        <div class="gdrive-dot disconnected" id="gdrive-dot"></div>
+        <span id="gdrive-label">Google Drive</span>
+      </div>
+      <div id="user-chip" onclick="showUserMenu()">
+        <div class="chip-avatar" id="chip-avatar"></div>
+        <span class="chip-name" id="chip-name"></span>
+        <span style="color:var(--text2);font-size:10px">▾</span>
+      </div>
+    </div>
+
+    <div id="view-calendar" class="view active">
+      <div class="cal-grid-header">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div id="cal-grid" class="cal-grid"></div>
+    </div>
+    <div id="view-week" class="view"><div id="week-view-content"></div></div>
+    <div id="view-list" class="view"><div id="list-view-content"></div></div>
+  </main>
+</div>
+
+<div id="modal-overlay" onclick="closeModal(event)">
+
+  <div id="modal-addEvent" class="modal">
+    <div class="modal-header">
+      <h2 id="eventModalTitle">Add Event</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editEventId">
+      <div class="form-group"><label>Event Title *</label><input type="text" id="evtTitle" placeholder="Event name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Category *</label><select id="evtCategory"></select></div>
+        <div class="form-group"><label>Location</label><input type="text" id="evtLocation" placeholder="Location (optional)"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Start Date *</label><input type="date" id="evtStartDate"></div>
+        <div class="form-group"><label>End Date</label><input type="date" id="evtEndDate"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Start Time</label><input type="time" id="evtStartTime"></div>
+        <div class="form-group"><label>End Time</label><input type="time" id="evtEndTime"></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="evtDesc" rows="2" placeholder="Notes or description"></textarea></div>
+      <div class="form-group">
+        <label class="checkbox-label"><input type="checkbox" id="evtIsRecurring" onchange="toggleRecurring()"><span>Recurring Event</span></label>
+      </div>
+      <div id="recurringOptions" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label>Frequency</label>
+            <select id="evtRecurFreq" onchange="toggleMonthlyOptions()">
+              <option value="daily">Daily</option>
+              <option value="weekly" selected>Weekly</option>
+              <option value="biweekly">Every 2 Weeks</option>
+              <option value="monthly">Monthly (by weekday)</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+          <div class="form-group"><label>End Date (recurring)</label><input type="date" id="evtRecurEnd"></div>
+        </div>
+        <div class="form-group" id="weekdaySelGroup">
+          <label>Days of Week</label>
+          <div class="weekday-picker">
+            <label><input type="checkbox" value="0"> Su</label>
+            <label><input type="checkbox" value="1"> Mo</label>
+            <label><input type="checkbox" value="2"> Tu</label>
+            <label><input type="checkbox" value="3"> We</label>
+            <label><input type="checkbox" value="4"> Th</label>
+            <label><input type="checkbox" value="5"> Fr</label>
+            <label><input type="checkbox" value="6"> Sa</label>
+          </div>
+        </div>
+        <div class="form-group" id="weekNumSelGroup" style="display:none">
+          <label>Which Week(s) of the Month</label>
+          <div class="weekday-picker">
+            <label><input type="checkbox" value="1"> 1st</label>
+            <label><input type="checkbox" value="2"> 2nd</label>
+            <label><input type="checkbox" value="3"> 3rd</label>
+            <label><input type="checkbox" value="4"> 4th</label>
+            <label><input type="checkbox" value="5"> 5th</label>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-top:6px">e.g. check "1st" + "3rd" + Tuesday = every 1st &amp; 3rd Tuesday of the month</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+
+  <div id="modal-categories" class="modal">
+    <div class="modal-header"><h2>Manage Categories</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div id="cat-list"></div>
+      <hr style="margin:16px 0;border-color:#333">
+      <h3 style="margin-bottom:12px;color:#aaa;font-size:14px;font-weight:500">Add New Category</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Code (short)</label><input type="text" id="newCatCode" placeholder="e.g. WRK" maxlength="10"></div>
+        <div class="form-group"><label>Description</label><input type="text" id="newCatDesc" placeholder="Category name"></div>
+        <div class="form-group"><label>Group</label>
+          <select id="newCatGroup"><option>Personal</option><option>Work</option><option>Family</option><option>Ministry</option><option>Other</option></select>
+        </div>
+        <div class="form-group"><label>Color</label><input type="color" id="newCatColor" value="#4f9cf9"></div>
+      </div>
+      <button class="btn-primary" onclick="addCategory()">Add Category</button>
+    </div>
+  </div>
+
+  <div id="modal-recurring" class="modal modal-wide">
+    <div class="modal-header"><h2>Recurring Rules</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <p class="modal-desc">Recurring rules automatically generate events based on a pattern. They are stored separately from one-time events.</p>
+      <div id="recurring-rules-list"></div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal()">Close</button></div>
+  </div>
+
+  <div id="modal-bulkImport" class="modal modal-wide">
+    <div class="modal-header"><h2>Bulk Import Events</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <p class="modal-desc">Import events from a CSV file. Download the template to get started.</p>
+      <button class="btn-secondary" style="margin-bottom:16px" onclick="downloadImportTemplate()">⬇ Download CSV Template</button>
+      <div class="drop-zone" id="importDropZone">
+        <div class="drop-icon">↑</div>
+        <div>Drop CSV file here or <span class="link-text" onclick="document.getElementById('importFile').click()">browse</span></div>
+        <div class="drop-hint">Supports CSV: Title, Category, StartDate, EndDate, StartTime, EndTime, Location, Description</div>
+        <input type="file" id="importFile" accept=".csv" style="display:none" onchange="handleImportFile(event)">
+      </div>
+      <div id="importPreview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" id="importConfirmBtn" style="display:none" onclick="confirmImport()">Import Events</button>
+    </div>
+  </div>
+
+  <div id="modal-pdfReport" class="modal">
+    <div class="modal-header"><h2>Generate PDF Report</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Start Date</label><input type="date" id="rptStartDate"></div>
+        <div class="form-group"><label>End Date</label><input type="date" id="rptEndDate"></div>
+      </div>
+      <div class="form-group"><label>Categories (leave blank for all)</label><div id="rptCategories" class="category-checkboxes"></div></div>
+      <div class="form-group"><label>Report Format</label>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <label class="radio-label"><input type="radio" name="rptFormat" value="list" checked> List View</label>
+          <label class="radio-label"><input type="radio" name="rptFormat" value="calendar"> Calendar Grid</label>
+        </div>
+      </div>
+      <div class="form-group"><label>Report Title</label><input type="text" id="rptTitle" placeholder="My Calendar Report" value="Calendar Report"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="generatePDF()">Generate PDF</button>
+    </div>
+  </div>
+
+  <div id="modal-rollover" class="modal">
+    <div class="modal-header"><h2>Rollover to Next Year</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <p class="modal-desc">This will copy all recurring events into the next calendar year. One-time events will not be rolled over.</p>
+      <div class="form-row">
+        <div class="form-group"><label>Source Year</label><select id="rolloverFrom"></select></div>
+        <div class="form-group"><label>Target Year</label><select id="rolloverTo"></select></div>
+      </div>
+      <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="rolloverOverwrite"><span>Overwrite existing events in target year</span></label></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger" onclick="doRollover()">Rollover Events</button>
+    </div>
+  </div>
+
+  <div id="modal-dayDetail" class="modal">
+    <div class="modal-header"><h2 id="dayDetailTitle">Events</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="dayDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn-primary" onclick="closeModal(); setTimeout(()=>{ document.getElementById('evtStartDate').value=currentDayDetail; showModal('addEvent'); }, 100)">+ Add Event</button>
+    </div>
+  </div>
+
+  <!-- User Management Modal -->
+  <div id="modal-manageUsers" class="modal modal-wide">
+    <div class="modal-header">
+      <h2>Manage Users</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="user-list-section">
+        <div id="user-list"></div>
+        <button class="btn-primary" style="margin-top:12px" onclick="showAddUser()">+ Add User</button>
+      </div>
+      <div id="user-edit-section" style="display:none">
+        <button class="btn-secondary" style="margin-bottom:16px;font-size:12px" onclick="showUserList()">← Back to Users</button>
+        <h3 id="user-edit-title" style="font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin-bottom:16px"></h3>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchUserTab('account')">Account</button>
+          <button class="tab-btn" onclick="switchUserTab('permissions')">Permissions</button>
+          <button class="tab-btn" onclick="switchUserTab('visibility')">Visibility</button>
+        </div>
+
+        <!-- Account Tab -->
+        <div class="tab-panel active" id="tab-account">
+          <input type="hidden" id="editUserId">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Username *</label>
+              <input type="text" id="editUsername" placeholder="username">
+            </div>
+            <div class="form-group">
+              <label>Display Name *</label>
+              <input type="text" id="editDisplayName" placeholder="Full name">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Password *</label>
+              <input type="password" id="editPassword" placeholder="Leave blank to keep current">
+            </div>
+            <div class="form-group">
+              <label>Confirm Password</label>
+              <input type="password" id="editPasswordConfirm" placeholder="Repeat password">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Avatar Color</label>
+            <input type="color" id="editUserColor" value="#6c63ff">
+          </div>
+        </div>
+
+        <!-- Permissions Tab -->
+        <div class="tab-panel" id="tab-permissions">
+          <p class="modal-desc">Select which actions this user is allowed to perform. Admin users always have full access.</p>
+          <div class="perm-grid" id="perm-grid"></div>
+        </div>
+
+        <!-- Visibility Tab -->
+        <div class="tab-panel" id="tab-visibility">
+          <p class="modal-desc">Select which groups and categories this user can see on the calendar.</p>
+          <label style="margin-bottom:8px;display:block">Groups</label>
+          <div class="vis-grid" id="vis-groups"></div>
+          <label style="margin-top:16px;margin-bottom:8px;display:block">Categories</label>
+          <div class="vis-grid" id="vis-categories"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" id="user-modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn-primary" id="save-user-btn" style="display:none" onclick="saveUser()">Save User</button>
+    </div>
+  </div>
+
+  <!-- Google Drive Modal -->
+  <div id="modal-gdrive" class="modal modal-wide">
+    <div class="modal-header">
+      <h2>Google Drive Integration</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="gdrive-modal-body">
+      <!-- populated by initGDriveModal() -->
+    </div>
+    <div class="modal-footer" id="gdrive-modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- User context menu -->
+  <div id="user-menu" style="display:none;position:fixed;top:62px;right:20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;z-index:5000;min-width:160px;box-shadow:var(--shadow);padding:6px">
+    <div id="user-menu-name" style="padding:8px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border);margin-bottom:4px"></div>
+    <button onclick="showModal('changePassword')" style="width:100%;background:none;border:none;color:var(--text);padding:8px 12px;text-align:left;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">🔑 Change Password</button>
+    <button onclick="doLogout()" style="width:100%;background:none;border:none;color:var(--danger);padding:8px 12px;text-align:left;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">→ Sign Out</button>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="modal-changePassword" class="modal">
+    <div class="modal-header"><h2>Change Password</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Current Password</label><input type="password" id="cpCurrent" placeholder="Current password"></div>
+      <div class="form-group"><label>New Password</label><input type="password" id="cpNew" placeholder="New password"></div>
+      <div class="form-group"><label>Confirm New Password</label><input type="password" id="cpConfirm" placeholder="Repeat new password"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+
+</div><!-- end modal-overlay -->
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   Q Calendar Planner — app.js
+   Data lives in localStorage under 'calendarData' (JSON).
+   ============================================================ */
+
+// ── DATA LAYER ──────────────────────────────────────────────
+
+const STORAGE_KEY = 'calendarData';
+
+// Google Drive config — initialized early so saveStorage can reference it
+// !! FILL THESE IN before deploying !!
+const GDRIVE_CLIENT_ID     = '746439353447-24u8v6nbg8d2r76abdukc7o0e40gsrop.apps.googleusercontent.com';
+const GDRIVE_CLIENT_SECRET = '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';
+const GDRIVE_REDIRECT_URI  = 'https://drive.google.com/file/d/17AqWcoECCQpg3gD_Gr37RP2G2Xtwu1El/view?usp=drive_link'; // e.g. https://yoursite.com/QCalendarPlanner.html
+
+const GDRIVE_KEY      = 'gdriveConfig';
+const GDRIVE_DATA_FILE  = 'QCalendarPlanner_data.json';
+const GDRIVE_USERS_FILE = 'QCalendarPlanner_users.json';
+const GDRIVE_FOLDER_NAME = 'QCalendarPlanner';
+
+let gdriveConfig = (() => { try { return JSON.parse(localStorage.getItem(GDRIVE_KEY)) || {}; } catch { return {}; } })();
+function saveGdriveConfig() { localStorage.setItem(GDRIVE_KEY, JSON.stringify(gdriveConfig)); }
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveStorage(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Debounced Google Drive push — 2s after last change
+  if (gdriveConfig && gdriveConfig.access_token) {
+    clearTimeout(saveStorage._timer);
+    saveStorage._timer = setTimeout(syncToGDrive, 2000);
+  }
+}
+saveStorage._timer = null;
+
+function getDefaultData() {
+  return {
+    events: [],
+    recurringRules: [],
+    categories: [
+      { code:'HLTH', name:'Health and Exercise',     group:'Personal',  color:'#3ecf8e', active:true },
+      { code:'EDU',  name:'School / Education',       group:'Personal',  color:'#4f9cf9', active:true },
+      { code:'PER',  name:'Personal Activities',      group:'Personal',  color:'#9b94ff', active:true },
+      { code:'TODO', name:'To Do Items',              group:'Personal',  color:'#f5a623', active:true },
+      { code:'FCA',  name:'Faith Christian Assembly', group:'Ministry',  color:'#e879f9', active:true },
+      { code:'HOP',  name:'Houses Of Prayer',         group:'Ministry',  color:'#d946ef', active:true },
+      { code:'CMI',  name:'Concert Ministries Intl',  group:'Ministry',  color:'#c026d3', active:true },
+      { code:'MIN',  name:'Other Ministries',         group:'Ministry',  color:'#a21caf', active:true },
+      { code:'WRK',  name:'Work',                     group:'Work',      color:'#0ea5e9', active:true },
+      { code:'TMK',  name:'Tracey Karriem',           group:'Family',    color:'#f43f5e', active:true },
+      { code:'JDK',  name:'Josiah Karriem',           group:'Family',    color:'#fb7185', active:true },
+      { code:'TSK',  name:'Thomas Karriem',           group:'Family',    color:'#f97316', active:true },
+      { code:'MAR',  name:'Michael Reed',             group:'Family',    color:'#84cc16', active:true },
+      { code:'NJF',  name:'Nick Fisher',              group:'Family',    color:'#22d3ee', active:true },
+      { code:'OTH',  name:'Other',                    group:'Work',      color:'#94a3b8', active:true },
+    ],
+    version: 1,
+    lastSaved: new Date().toISOString()
+  };
+}
+
+let DB = loadData() || getDefaultData();
+
+// Seed recurring rules from Excel data if first run
+if (DB.recurringRules.length === 0) {
+  DB.recurringRules = [
+    {
+      id: 'r1', title: '7:00 AM-4:00 PM Work', category: 'WRK',
+      freq: 'weekly', days: [1,2,3,4,5],
+      startDate: '2025-01-01', endDate: '2025-12-31',
+      startTime: '07:00', endTime: '16:00',
+      location: 'Clarience Technologies', description: ''
+    },
+    {
+      id: 'r2', title: '9:00 AM-12:00 PM Service', category: 'FCA',
+      freq: 'weekly', days: [0],
+      startDate: '2025-01-01', endDate: '2025-12-31',
+      startTime: '09:00', endTime: '12:00',
+      location: '', description: 'Sunday Morning Service'
+    },
+    {
+      id: 'r3', title: '7:00 PM-9:00 PM Service', category: 'FCA',
+      freq: 'weekly', days: [3],
+      startDate: '2025-01-01', endDate: '2025-12-31',
+      startTime: '19:00', endTime: '21:00',
+      location: '', description: 'Wednesday Evening Service'
+    },
+    {
+      id: 'r4', title: '9:00 PM-11:00 PM Biceps, Back', category: 'HLTH',
+      freq: 'weekly', days: [0, 2, 4],
+      startDate: '2025-01-01', endDate: '2025-12-31',
+      startTime: '21:00', endTime: '23:00',
+      location: '', description: 'Workout'
+    },
+    {
+      id: 'r5', title: '7:45 AM-2:30 PM Classes', category: 'TSK',
+      freq: 'weekly', days: [1,2,3,4,5],
+      startDate: '2025-01-01', endDate: '2025-12-31',
+      startTime: '07:45', endTime: '14:30',
+      location: '', description: 'Thomas school classes'
+    },
+    {
+      id: 'r6', title: '6:00 PM-9:00 PM EMAW Meeting', category: 'MIN',
+      freq: 'weekly', days: [1],
+      startDate: '2025-01-01', endDate: '2025-12-31',
+      startTime: '18:00', endTime: '21:00',
+      location: '', description: 'Monday Evening Ministry'
+    },
+    {
+      id: 'r7', title: '6:00 PM-9:00 PM Homework', category: 'EDU',
+      freq: 'weekly', days: [0],
+      startDate: '2025-01-01', endDate: '2025-12-31',
+      startTime: '18:00', endTime: '21:00',
+      location: '', description: 'School homework'
+    }
+  ];
+
+  // Seed some one-time ad-hoc events from the Excel Upload AD Hoc sheet
+  DB.events = [
+    { id:'e1', title:'GTHOP Seder Meal', category:'HOP', startDate:'2025-04-12', endDate:'2025-04-12', startTime:'16:00', endTime:'19:00', location:'Greater Toledo House Of Prayer', description:'GTHOP', isRecurring:false },
+    { id:'e2', title:'Hanoverton Visit', category:'MIN', startDate:'2025-05-02', endDate:'2025-05-05', startTime:'', endTime:'', location:'Fellowship Of The Beloved', description:'Weekend of Ministry at Hanoverton OH', isRecurring:false },
+    { id:'e3', title:'Hardware Weekend', category:'WRK', startDate:'2025-04-19', endDate:'2025-04-20', startTime:'12:00', endTime:'20:00', location:'Clarience Technologies', description:'', isRecurring:false },
+    { id:'e4', title:'ElKhart Full Save', category:'WRK', startDate:'2025-04-06', endDate:'2025-04-06', startTime:'08:00', endTime:'20:00', location:'Remote from Church', description:'', isRecurring:false },
+    { id:'e5', title:'McDonalds Shift', category:'OTH', startDate:'2025-03-29', endDate:'2025-03-29', startTime:'14:00', endTime:'20:00', location:'Monroe Street McDonalds', description:'', isRecurring:false },
+    { id:'e6', title:'HOLIDAY - New Years Day', category:'WRK', startDate:'2025-01-01', endDate:'2025-01-01', startTime:'', endTime:'', location:'', description:'', isRecurring:false },
+    { id:'e7', title:'BOL Robo Call Goes Out', category:'TODO', startDate:'2025-11-28', endDate:'2025-11-28', startTime:'16:00', endTime:'18:00', location:'Remote Online', description:'', isRecurring:false },
+  ];
+
+  saveStorage(DB);
+}
+
+// ── STATE ────────────────────────────────────────────────────
+
+let currentDate = new Date();
+let currentView = 'calendar';
+let currentDayDetail = null;
+let activeFilters = new Set(DB.categories.map(c => c.code));
+let importBuffer = [];
+let pendingEventDate = null;
+
+// ── HELPERS ──────────────────────────────────────────────────
+
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : d;
+  return dt.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2,'0')} ${period}`;
+}
+
+function uid() { return '_' + Math.random().toString(36).slice(2, 10); }
+
+function getCat(code) {
+  return DB.categories.find(c => c.code === code) || { color:'#888', name: code };
+}
+
+function isDateInRange(dateStr, startStr, endStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const s = new Date(startStr + 'T00:00:00');
+  const e = new Date(endStr + 'T00:00:00');
+  return d >= s && d <= e;
+}
+
+function getNthWeekdayOfMonth(dateStr) {
+  // Returns which occurrence of this weekday within its month (1=first, 2=second, etc.)
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.ceil(d.getDate() / 7);
+}
+
+function generateRecurringForDate(dateStr) {
+  const events = [];
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay();
+
+  for (const rule of DB.recurringRules) {
+    if (!isDateInRange(dateStr, rule.startDate, rule.endDate)) continue;
+
+    let matches = false;
+
+    if (rule.freq === 'daily') {
+      matches = true;
+
+    } else if (rule.freq === 'weekly') {
+      matches = rule.days.includes(dow);
+
+    } else if (rule.freq === 'biweekly') {
+      if (rule.days.includes(dow)) {
+        // Count weeks since rule start
+        const start = new Date(rule.startDate + 'T00:00:00');
+        const diffDays = Math.round((d - start) / 86400000);
+        const weekNum = Math.floor(diffDays / 7);
+        matches = weekNum % 2 === 0;
+      }
+
+    } else if (rule.freq === 'monthly') {
+      if (rule.days.includes(dow)) {
+        const nthWeek = getNthWeekdayOfMonth(dateStr);
+        const weekNums = rule.weekNums && rule.weekNums.length > 0 ? rule.weekNums : [1];
+        matches = weekNums.includes(nthWeek);
+      }
+
+    } else if (rule.freq === 'yearly') {
+      if (rule.days.includes(dow)) {
+        const start = new Date(rule.startDate + 'T00:00:00');
+        matches = d.getMonth() === start.getMonth() && d.getDate() === start.getDate();
+      }
+    }
+
+    if (!matches) continue;
+
+    events.push({
+      id: rule.id + '_' + dateStr,
+      title: rule.title,
+      category: rule.category,
+      startDate: dateStr,
+      endDate: dateStr,
+      startTime: rule.startTime,
+      endTime: rule.endTime,
+      location: rule.location,
+      description: rule.description,
+      isRecurring: true,
+      ruleId: rule.id
+    });
+  }
+  return events;
+}
+
+function getEventsForDate(dateStr) {
+  const oneTime = DB.events.filter(e => e.startDate <= dateStr && (e.endDate || e.startDate) >= dateStr);
+  const recurring = generateRecurringForDate(dateStr);
+  const all = [...oneTime, ...recurring];
+  return all.filter(e => activeFilters.has(e.category) && (!currentUser || canSeeCategory(e.category)));
+}
+
+function getDatesInMonth(year, month) {
+  const dates = [];
+  const first = new Date(year, month, 1);
+  const startDow = first.getDay();
+  for (let i = 0; i < startDow; i++) {
+    const prev = new Date(year, month, 1 - (startDow - i));
+    dates.push({ date: prev, current: false });
+  }
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    dates.push({ date: new Date(year, month, d), current: true });
+  }
+  const remaining = 7 - (dates.length % 7);
+  if (remaining < 7) {
+    for (let i = 1; i <= remaining; i++) {
+      dates.push({ date: new Date(year, month + 1, i), current: false });
+    }
+  }
+  return dates;
+}
+
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getDayName(dow) {
+  return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dow];
+}
+
+// ── RENDER ───────────────────────────────────────────────────
+
+function render() {
+  renderTopBar();
+  if (currentView === 'calendar') renderCalendar();
+  else if (currentView === 'week') renderWeek();
+  else renderList();
+}
+
+function renderTopBar() {
+  const el = document.getElementById('current-period');
+  if (currentView === 'calendar') {
+    el.textContent = currentDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+  } else if (currentView === 'week') {
+    const sun = getWeekStart(currentDate);
+    const sat = new Date(sun); sat.setDate(sat.getDate() + 6);
+    el.textContent = `${fmtDate(sun)} – ${fmtDate(sat)}`;
+  } else {
+    el.textContent = currentDate.getFullYear();
+  }
+}
+
+function getWeekStart(d) {
+  const day = new Date(d);
+  const dow = day.getDay();
+  day.setDate(day.getDate() - dow);
+  return day;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('cal-grid');
+  const { getFullYear: Y, getMonth: M } = currentDate;
+  const year = currentDate.getFullYear(), month = currentDate.getMonth();
+  const dates = getDatesInMonth(year, month);
+  const today = toDateStr(new Date());
+
+  grid.innerHTML = dates.map(({ date, current }) => {
+    const ds = toDateStr(date);
+    const evts = getEventsForDate(ds);
+    const isToday = ds === today;
+    const maxShow = 3;
+    const shown = evts.slice(0, maxShow);
+    const more = evts.length - maxShow;
+
+    return `
+      <div class="cal-day ${!current ? 'other-month' : ''} ${isToday ? 'today' : ''}"
+           onclick="openDayDetail('${ds}')">
+        <div class="day-num">${date.getDate()}</div>
+        ${shown.map(e => {
+          const cat = getCat(e.category);
+          return `<div class="cal-event" style="background:${cat.color}" title="${e.title}">${e.title}</div>`;
+        }).join('')}
+        ${more > 0 ? `<div class="more-events">+${more} more</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderWeek() {
+  const sun = getWeekStart(new Date(currentDate));
+  const content = document.getElementById('week-view-content');
+  const today = toDateStr(new Date());
+  let html = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sun);
+    d.setDate(d.getDate() + i);
+    const ds = toDateStr(d);
+    const evts = getEventsForDate(ds);
+    const isToday = ds === today;
+
+    html += `
+      <div class="week-day-block">
+        <div class="week-day-header" style="${isToday ? 'border-left:3px solid var(--accent)' : ''}">
+          <div class="week-day-name">${getDayName(d.getDay())}</div>
+          <div class="week-day-date">${fmtDate(ds)}</div>
+        </div>
+        <div class="week-events">
+          ${evts.length === 0 ? '<div class="no-events-msg">No events</div>' :
+            evts.map(e => {
+              const cat = getCat(e.category);
+              const timeStr = e.startTime ? `${fmtTime(e.startTime)}${e.endTime ? ' – '+fmtTime(e.endTime) : ''}` : 'All day';
+              return `
+                <div class="week-event-row" onclick="openEventDetail('${e.id}', '${ds}')">
+                  <div class="week-event-cat" style="background:${cat.color}"></div>
+                  <div class="week-event-time">${timeStr}</div>
+                  <div class="week-event-title">${e.title}</div>
+                  <div style="font-size:10px;color:var(--text2);padding:1px 5px;background:var(--bg3);border-radius:3px">${e.category}</div>
+                </div>
+              `;
+            }).join('')}
+        </div>
+      </div>
+    `;
+  }
+  content.innerHTML = html;
+}
+
+function renderList() {
+  const content = document.getElementById('list-view-content');
+  const year = currentDate.getFullYear();
+  const months = [];
+
+  for (let m = 0; m < 12; m++) {
+    const monthEvts = [];
+    const daysInMonth = new Date(year, m + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = `${year}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const evts = getEventsForDate(ds);
+      evts.forEach(e => monthEvts.push({ ...e, _dateStr: ds }));
+    }
+    months.push({ m, evts: monthEvts });
+  }
+
+  const allHaveEvents = months.some(mo => mo.evts.length > 0);
+
+  content.innerHTML = months.map(({ m, evts }) => {
+    if (evts.length === 0) return '';
+    const monthName = new Date(year, m, 1).toLocaleDateString('en-US', { month:'long', year:'numeric' });
+    return `
+      <div class="list-month-group">
+        <div class="list-month-title">${monthName}</div>
+        ${evts.map(e => {
+          const cat = getCat(e.category);
+          const timeStr = e.startTime ? fmtTime(e.startTime) : 'All day';
+          return `
+            <div class="list-event-row">
+              <div class="list-event-date">${fmtDate(e._dateStr)}</div>
+              <div class="list-event-cat-badge" style="background:${cat.color}">${e.category}</div>
+              <div>${e.title.replace(/</g,'&lt;')}${e.location ? ` <span style="color:var(--text2);font-size:11px">@ ${e.location.replace(/</g,'&lt;')}</span>` : ''} <span style="color:var(--text2);font-size:11px">${timeStr}</span></div>
+              <div class="list-event-actions">
+                <button class="act-btn list-evt-btn" data-action="copy" data-id="${e.isRecurring ? e.ruleId : e.id}" data-date="${e._dateStr}" title="Copy">\u29C9</button>
+                ${!e.isRecurring ? `<button class="act-btn list-evt-btn" data-action="edit" data-id="${e.id}" title="Edit">\u270E</button>` : `<button class="act-btn list-evt-btn" data-action="edit" data-id="${e.ruleId}" title="Edit rule">\u270E</button>`}
+                ${!e.isRecurring ? `<button class="act-btn del list-evt-btn" data-action="delete" data-id="${e.id}" title="Delete">\u2715</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
+// ── CATEGORY SIDEBAR ─────────────────────────────────────────
+
+function getGroups() {
+  return [...new Set(DB.categories.map(c => c.group))].sort();
+}
+
+function getPermittedCats() {
+  return DB.categories.filter(c => canSeeCategory(c.code));
+}
+
+function renderGroupFilters() {
+  const el = document.getElementById('groupFilters');
+  const permitted = getPermittedCats();
+  const permittedGroups = [...new Set(permitted.map(c => c.group))].sort();
+  const isAdmin = currentUser && currentUser.isAdmin;
+
+  // Show/hide All-None buttons based on whether user has full access
+  const groupAllNone = document.getElementById('group-allnone');
+  if (groupAllNone) groupAllNone.style.display = isAdmin ? 'flex' : 'none';
+
+  el.innerHTML = permittedGroups.map(g => {
+    const cats = permitted.filter(c => c.group === g);
+    const allOn = cats.every(c => activeFilters.has(c.code));
+    const someOn = cats.some(c => activeFilters.has(c.code));
+    const state = allOn ? 'all' : someOn ? 'some' : 'none';
+    const dotStyle = state === 'all' ? 'background:var(--accent)' : state === 'some' ? 'background:var(--warning)' : 'background:var(--border)';
+    return `
+      <div class="cat-filter ${state !== 'none' ? 'active' : ''}" onclick="toggleGroupFilter('${g}')">
+        <div class="cat-dot" style="${dotStyle}"></div>
+        <span class="cat-filter-label">${g}</span>
+        <span style="font-size:10px;color:var(--text2)">${cats.length}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleGroupFilter(group) {
+  const permitted = getPermittedCats().filter(c => c.group === group);
+  const allOn = permitted.every(c => activeFilters.has(c.code));
+  if (allOn) permitted.forEach(c => activeFilters.delete(c.code));
+  else permitted.forEach(c => activeFilters.add(c.code));
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+function selectAllGroups() {
+  getPermittedCats().forEach(c => activeFilters.add(c.code));
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+function clearAllGroups() {
+  activeFilters.clear();
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+function renderCategoryFilters() {
+  const el = document.getElementById('categoryFilters');
+  const permitted = getPermittedCats();
+  const isAdmin = currentUser && currentUser.isAdmin;
+
+  // Show/hide All-None buttons
+  const catAllNone = document.getElementById('cat-allnone');
+  if (catAllNone) catAllNone.style.display = isAdmin ? 'flex' : 'none';
+
+  el.innerHTML = permitted.map(cat => `
+    <div class="cat-filter ${activeFilters.has(cat.code) ? 'active' : ''}" onclick="toggleFilter('${cat.code}')">
+      <div class="cat-dot" style="background:${cat.color}"></div>
+      <span class="cat-filter-label">${cat.code} – ${cat.name.slice(0,14)}</span>
+    </div>
+  `).join('');
+}
+
+function toggleFilter(code) {
+  // Guard: user can only toggle categories they are permitted to see
+  if (!canSeeCategory(code)) return;
+  if (activeFilters.has(code)) activeFilters.delete(code);
+  else activeFilters.add(code);
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+function selectAllCats() {
+  getPermittedCats().forEach(c => activeFilters.add(c.code));
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+function clearAllCats() {
+  activeFilters.clear();
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────
+
+function switchView(v) {
+  currentView = v;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-view="${v}"]`).classList.add('active');
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+  render();
+}
+
+function navigate(dir) {
+  if (currentView === 'calendar') {
+    currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + dir, 1);
+  } else if (currentView === 'week') {
+    currentDate = new Date(currentDate);
+    currentDate.setDate(currentDate.getDate() + dir * 7);
+  } else {
+    currentDate = new Date(currentDate.getFullYear() + dir, 0, 1);
+  }
+  render();
+}
+
+function goToToday() {
+  currentDate = new Date();
+  render();
+}
+
+// ── MODALS ───────────────────────────────────────────────────
+
+function showModal(name) {
+  const guards = {
+    addEvent:      'addEvents',
+    categories:    'manageCategories',
+    recurring:     'manageRecurring',
+    bulkImport:    'bulkImport',
+    pdfReport:     'export',
+    rollover:      'backupRestore',
+    manageUsers:   'manageUsers',
+  };
+  if (guards[name] && !can(guards[name])) {
+    showToast('You do not have permission for this action', 'error');
+    return;
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+  const m = document.getElementById(`modal-${name}`);
+  if (m) m.classList.add('active');
+
+  if (name === 'addEvent') initAddEventModal();
+  if (name === 'categories') initCategoriesModal();
+  if (name === 'recurring') initRecurringModal();
+  if (name === 'pdfReport') initPdfModal();
+  if (name === 'rollover') initRolloverModal();
+  if (name === 'manageUsers') initManageUsersModal();
+  if (name === 'gdrive') initGDriveModal();
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+  importBuffer = [];
+  document.getElementById('importPreview').innerHTML = '';
+  document.getElementById('importConfirmBtn').style.display = 'none';
+}
+
+// ── ADD EVENT MODAL ──────────────────────────────────────────
+
+function initAddEventModal() {
+  const sel = document.getElementById('evtCategory');
+  sel.innerHTML = DB.categories.map(c => `<option value="${c.code}">${c.code} – ${c.name}</option>`).join('');
+  document.getElementById('editEventId').value = '';
+  document.getElementById('eventModalTitle').textContent = 'Add Event';
+  document.getElementById('evtTitle').value = '';
+  document.getElementById('evtLocation').value = '';
+  document.getElementById('evtDesc').value = '';
+  document.getElementById('evtStartTime').value = '';
+  document.getElementById('evtEndTime').value = '';
+  document.getElementById('evtEndDate').value = '';
+  document.getElementById('evtIsRecurring').checked = false;
+  document.getElementById('recurringOptions').style.display = 'none';
+  document.getElementById('weekNumSelGroup').style.display = 'none';
+  document.querySelectorAll('#weekdaySelGroup input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#weekNumSelGroup input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.getElementById('evtStartDate').value = pendingEventDate || toDateStr(new Date());
+  pendingEventDate = null;
+}
+
+function toggleRecurring() {
+  const show = document.getElementById('evtIsRecurring').checked;
+  document.getElementById('recurringOptions').style.display = show ? 'block' : 'none';
+  if (show) toggleMonthlyOptions();
+}
+
+function toggleMonthlyOptions() {
+  const freq = document.getElementById('evtRecurFreq').value;
+  document.getElementById('weekNumSelGroup').style.display = freq === 'monthly' ? 'block' : 'none';
+}
+
+function saveEvent() {
+  const editId = document.getElementById('editEventId').value;
+  const perm = editId ? 'editEvents' : 'addEvents';
+  if (!can(perm)) { showToast('You do not have permission for this action', 'error'); return; }
+  const title = document.getElementById('evtTitle').value.trim();
+  const category = document.getElementById('evtCategory').value;
+  const startDate = document.getElementById('evtStartDate').value;
+  const endDate = document.getElementById('evtEndDate').value || startDate;
+  const startTime = document.getElementById('evtStartTime').value;
+  const endTime = document.getElementById('evtEndTime').value;
+  const location = document.getElementById('evtLocation').value.trim();
+  const desc = document.getElementById('evtDesc').value.trim();
+  const isRec = document.getElementById('evtIsRecurring').checked;
+
+  if (!title || !startDate) { showToast('Please fill in Title and Start Date', 'error'); return; }
+
+  if (isRec) {
+    const freq = document.getElementById('evtRecurFreq').value;
+    const recEnd = document.getElementById('evtRecurEnd').value || endDate;
+    const days = [...document.querySelectorAll('#weekdaySelGroup input:checked')].map(i => +i.value);
+    const weekNums = freq === 'monthly'
+      ? [...document.querySelectorAll('#weekNumSelGroup input:checked')].map(i => +i.value)
+      : [];
+
+    const rule = {
+      id: editId || uid(),
+      title, category, freq, days, weekNums,
+      startDate, endDate: recEnd,
+      startTime, endTime, location, description: desc
+    };
+
+    const idx = DB.recurringRules.findIndex(r => r.id === editId);
+    if (idx >= 0) DB.recurringRules[idx] = rule;
+    else DB.recurringRules.push(rule);
+  } else {
+    const evt = { id: editId || uid(), title, category, startDate, endDate, startTime, endTime, location, description: desc, isRecurring: false };
+    const idx = DB.events.findIndex(e => e.id === editId);
+    if (idx >= 0) DB.events[idx] = evt;
+    else DB.events.push(evt);
+  }
+
+  saveStorage(DB);
+  closeModal();
+  render();
+  showToast('Event saved ✓', 'success');
+}
+
+function editEvent(id) {
+  // Check one-time events first
+  const evt = DB.events.find(e => e.id === id);
+  if (evt) {
+    openEventForm({
+      editId: id,
+      title: evt.title,
+      category: evt.category,
+      startDate: evt.startDate,
+      endDate: evt.endDate || '',
+      startTime: evt.startTime || '',
+      endTime: evt.endTime || '',
+      location: evt.location || '',
+      description: evt.description || '',
+      isRecurring: false,
+      modalTitle: 'Edit Event'
+    });
+    return;
+  }
+  // Check recurring rules (id may be ruleId or ruleId_date suffix)
+  const ruleId = id.includes('_') ? id.split('_')[0] : id;
+  const rule = DB.recurringRules.find(r => r.id === ruleId);
+  if (rule) {
+    openEventForm({
+      editId: rule.id,
+      title: rule.title,
+      category: rule.category,
+      startDate: rule.startDate,
+      endDate: rule.endDate || '',
+      startTime: rule.startTime || '',
+      endTime: rule.endTime || '',
+      location: rule.location || '',
+      description: rule.description || '',
+      isRecurring: true,
+      freq: rule.freq || 'weekly',
+      days: rule.days || [],
+      weekNums: rule.weekNums || [],
+      modalTitle: 'Edit Recurring Rule'
+    });
+  }
+}
+
+function openEventForm(opts) {
+  if (!can(opts.editId ? 'editEvents' : 'addEvents')) {
+    showToast('You do not have permission for this action', 'error');
+    return;
+  }
+  // Open modal without triggering initAddEventModal (which would wipe the form)
+  document.getElementById('modal-overlay').classList.add('open');
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+  document.getElementById('modal-addEvent').classList.add('active');
+
+  // Populate category dropdown first
+  const sel = document.getElementById('evtCategory');
+  sel.innerHTML = DB.categories.map(c => `<option value="${c.code}">${c.code} – ${c.name}</option>`).join('');
+
+  document.getElementById('editEventId').value = opts.editId || '';
+  document.getElementById('eventModalTitle').textContent = opts.modalTitle || 'Add Event';
+  document.getElementById('evtTitle').value = opts.title || '';
+  document.getElementById('evtCategory').value = opts.category || DB.categories[0].code;
+  document.getElementById('evtStartDate').value = opts.startDate || toDateStr(new Date());
+  document.getElementById('evtEndDate').value = opts.endDate || '';
+  document.getElementById('evtStartTime').value = opts.startTime || '';
+  document.getElementById('evtEndTime').value = opts.endTime || '';
+  document.getElementById('evtLocation').value = opts.location || '';
+  document.getElementById('evtDesc').value = opts.description || '';
+
+  const isRec = !!opts.isRecurring;
+  document.getElementById('evtIsRecurring').checked = isRec;
+  document.getElementById('recurringOptions').style.display = isRec ? 'block' : 'none';
+  document.getElementById('weekNumSelGroup').style.display = (isRec && opts.freq === 'monthly') ? 'block' : 'none';
+
+  if (isRec) {
+    document.getElementById('evtRecurFreq').value = opts.freq || 'weekly';
+    document.getElementById('evtRecurEnd').value = opts.endDate || '';
+    document.querySelectorAll('#weekdaySelGroup input[type=checkbox]').forEach(cb => {
+      cb.checked = (opts.days || []).includes(+cb.value);
+    });
+    document.querySelectorAll('#weekNumSelGroup input[type=checkbox]').forEach(cb => {
+      cb.checked = (opts.weekNums || []).includes(+cb.value);
+    });
+  } else {
+    document.querySelectorAll('#weekdaySelGroup input[type=checkbox]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#weekNumSelGroup input[type=checkbox]').forEach(cb => cb.checked = false);
+  }
+}
+
+function deleteEvent(id) {
+  if (!can('deleteEvents')) { showToast('You do not have permission to delete events', 'error'); return; }
+  if (!confirm('Delete this event?')) return;
+  DB.events = DB.events.filter(e => e.id !== id);
+  saveStorage(DB);
+  closeModal();
+  render();
+  showToast('Event deleted', 'error');
+}
+
+function copyEvent(id, dateStr) {
+  if (!can('addEvents')) { showToast('You do not have permission to add events', 'error'); return; }
+
+  // Try one-time event first
+  let src = DB.events.find(e => e.id === id);
+
+  if (!src) {
+    // Try recurring rule (id may have _date suffix)
+    const ruleId = id.includes('_') ? id.split('_')[0] : id;
+    const rule = DB.recurringRules.find(r => r.id === ruleId);
+    if (rule) {
+      src = {
+        title: rule.title,
+        category: rule.category,
+        startDate: dateStr || rule.startDate,
+        endDate: dateStr || rule.startDate,
+        startTime: rule.startTime || '',
+        endTime: rule.endTime || '',
+        location: rule.location || '',
+        description: rule.description || ''
+      };
+    }
+  }
+
+  if (!src) { showToast('Event not found', 'error'); return; }
+
+  openEventForm({
+    editId: '',  // no editId = new event
+    title: src.title + ' (Copy)',
+    category: src.category,
+    startDate: src.startDate,
+    endDate: src.endDate || src.startDate,
+    startTime: src.startTime || '',
+    endTime: src.endTime || '',
+    location: src.location || '',
+    description: src.description || '',
+    isRecurring: false,
+    modalTitle: 'Copy Event'
+  });
+}
+
+// ── DAY DETAIL MODAL ─────────────────────────────────────────
+
+function openDayDetail(ds) {
+  currentDayDetail = ds;
+  const evts = getEventsForDate(ds);
+  document.getElementById('dayDetailTitle').textContent = fmtDate(ds);
+  const body = document.getElementById('dayDetailBody');
+
+  if (evts.length === 0) {
+    body.innerHTML = '<p style="color:var(--text2);font-size:13px;padding:8px 0">No events this day.</p>';
+  } else {
+    body.innerHTML = evts.map(e => {
+      const cat = getCat(e.category);
+      const timeStr = e.startTime ? `${fmtTime(e.startTime)}${e.endTime ? ' \u2013 '+fmtTime(e.endTime) : ''}` : 'All day';
+      const actionId = e.isRecurring ? e.ruleId : e.id;
+      return `
+        <div class="day-detail-event">
+          <div class="dde-dot" style="background:${cat.color}"></div>
+          <div class="dde-info">
+            <div class="dde-title">${e.title.replace(/</g,'&lt;')}</div>
+            <div class="dde-time">${cat.name} \u00b7 ${timeStr}</div>
+            ${e.location ? `<div class="dde-loc">\uD83D\uDCCD ${e.location.replace(/</g,'&lt;')}</div>` : ''}
+            ${e.description ? `<div class="dde-desc">${e.description.replace(/</g,'&lt;')}</div>` : ''}
+          </div>
+          <div class="dde-actions">
+            <button class="act-btn dde-btn" data-action="copy" data-id="${actionId}" data-date="${ds}" title="Copy event">\u29C9</button>
+            <button class="act-btn dde-btn" data-action="edit" data-id="${actionId}" title="Edit">\u270E</button>
+            ${!e.isRecurring ? `<button class="act-btn del dde-btn" data-action="delete" data-id="${e.id}" title="Delete">\u2715</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  showModal('dayDetail');
+}
+
+// Delegated listeners for day detail, list view, and recurring rules action buttons
+function attachDayDetailListeners() {
+  const handler = function(ev) {
+    const btn = ev.target.closest('.dde-btn, .list-evt-btn, .rule-btn');
+    if (!btn) return;
+    ev.stopPropagation();
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    const date = btn.dataset.date;
+    if (action === 'edit') editEvent(id);
+    else if (action === 'copy') { if (btn.classList.contains('rule-btn')) copyRule(id); else copyEvent(id, date); }
+    else if (action === 'delete') { if (btn.classList.contains('rule-btn')) deleteRule(id); else deleteEvent(id); }
+  };
+
+  const body = document.getElementById('dayDetailBody');
+  if (body) body.addEventListener('click', handler);
+
+  const listContent = document.getElementById('list-view-content');
+  if (listContent) listContent.addEventListener('click', handler);
+
+  const rulesList = document.getElementById('recurring-rules-list');
+  if (rulesList) rulesList.addEventListener('click', handler);
+}
+
+// ── CATEGORIES MODAL ─────────────────────────────────────────
+
+function initCategoriesModal() {
+  renderCatList();
+}
+
+function renderCatList() {
+  document.getElementById('cat-list').innerHTML = DB.categories.map(c => `
+    <div class="cat-row">
+      <div class="cat-row-dot" style="background:${c.color}"></div>
+      <div class="cat-row-code">${c.code}</div>
+      <div class="cat-row-name">${c.name}</div>
+      <div class="cat-row-group">${c.group}</div>
+      <button class="cat-del-btn" onclick="deleteCat('${c.code}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function addCategory() {
+  const code = document.getElementById('newCatCode').value.trim().toUpperCase();
+  const name = document.getElementById('newCatDesc').value.trim();
+  const group = document.getElementById('newCatGroup').value;
+  const color = document.getElementById('newCatColor').value;
+
+  if (!code || !name) { showToast('Code and Name required', 'error'); return; }
+  if (DB.categories.find(c => c.code === code)) { showToast('Category code already exists', 'error'); return; }
+
+  DB.categories.push({ code, name, group, color, active: true });
+  if (canSeeCategory(code)) activeFilters.add(code);
+  saveStorage(DB);
+  renderCatList();
+  renderGroupFilters();
+  renderCategoryFilters();
+  showToast('Category added ✓', 'success');
+}
+
+function deleteCat(code) {
+  if (!confirm(`Delete category "${code}"? Events using it won't be deleted.`)) return;
+  DB.categories = DB.categories.filter(c => c.code !== code);
+  activeFilters.delete(code);
+  saveStorage(DB);
+  renderCatList();
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+// ── RECURRING MODAL ──────────────────────────────────────────
+
+function initRecurringModal() {
+  const el = document.getElementById('recurring-rules-list');
+  if (DB.recurringRules.length === 0) {
+    el.innerHTML = '<p style="color:var(--text2);font-size:13px">No recurring rules defined. Add events with "Recurring Event" checked.</p>';
+    return;
+  }
+  const freqLabel = { daily:'Daily', weekly:'Weekly', biweekly:'Every 2 Wks', monthly:'Monthly', yearly:'Yearly' };
+  const dayAbbr = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const weekLabel = {1:'1st',2:'2nd',3:'3rd',4:'4th',5:'5th'};
+
+  el.innerHTML = DB.recurringRules.map(r => {
+    const cat = getCat(r.category);
+    const daysStr = r.days.map(d => dayAbbr[d]).join(', ');
+    const weekNumStr = r.freq === 'monthly' && r.weekNums && r.weekNums.length > 0
+      ? (r.weekNums.map(n => weekLabel[n]).join(', ') + ' ' + daysStr)
+      : daysStr;
+    return `
+      <div class="rule-row">
+        <div class="rule-dot" style="background:${cat.color}"></div>
+        <div class="rule-title">${r.title}</div>
+        <div class="rule-freq">${freqLabel[r.freq] || r.freq}${weekNumStr ? ' ('+weekNumStr+')' : ''}</div>
+        <div class="rule-range">${fmtDate(r.startDate)} – ${fmtDate(r.endDate)}</div>
+        <button class="act-btn rule-btn" data-action="copy" data-id="${r.id}" title="Copy rule">\u29C9</button>
+        <button class="act-btn rule-btn" data-action="edit" data-id="${r.id}" title="Edit rule">\u270E</button>
+        <button class="act-btn del rule-btn" data-action="delete" data-id="${r.id}" title="Delete rule">\u2715</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function deleteRule(id) {
+  if (!confirm('Delete this recurring rule?')) return;
+  DB.recurringRules = DB.recurringRules.filter(r => r.id !== id);
+  saveStorage(DB);
+  initRecurringModal();
+  render();
+  showToast('Rule deleted', 'error');
+}
+
+function copyRule(id) {
+  const rule = DB.recurringRules.find(r => r.id === id);
+  if (!rule) return;
+  openEventForm({
+    editId: '',
+    title: rule.title + ' (Copy)',
+    category: rule.category,
+    startDate: rule.startDate,
+    endDate: rule.endDate || '',
+    startTime: rule.startTime || '',
+    endTime: rule.endTime || '',
+    location: rule.location || '',
+    description: rule.description || '',
+    isRecurring: true,
+    freq: rule.freq || 'weekly',
+    days: rule.days || [],
+    weekNums: rule.weekNums || [],
+    modalTitle: 'Copy Recurring Rule'
+  });
+}
+
+// ── BULK IMPORT ──────────────────────────────────────────────
+
+function downloadImportTemplate() {
+  const header = 'Title,Category,StartDate,EndDate,StartTime,EndTime,Location,Description';
+  const example = 'Team Meeting,WRK,2025-06-01,2025-06-01,09:00,10:00,Conference Room,Weekly standup';
+  const blob = new Blob([header + '\n' + example], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'calendar_import_template.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseImportCSV(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseImportCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const events = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(',').map(v => v.trim());
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = vals[idx] || '');
+    if (obj.title && obj.startdate) {
+      events.push({
+        id: uid(),
+        title: obj.title,
+        category: obj.category || 'OTH',
+        startDate: obj.startdate,
+        endDate: obj.enddate || obj.startdate,
+        startTime: obj.starttime || '',
+        endTime: obj.endtime || '',
+        location: obj.location || '',
+        description: obj.description || '',
+        isRecurring: false
+      });
+    }
+  }
+
+  importBuffer = events;
+  renderImportPreview(events);
+}
+
+function renderImportPreview(events) {
+  if (events.length === 0) {
+    document.getElementById('importPreview').innerHTML = '<p style="color:var(--danger);margin-top:12px">No valid events found. Check your CSV format.</p>';
+    return;
+  }
+  const preview = document.getElementById('importPreview');
+  preview.innerHTML = `
+    <p style="color:var(--success);margin-bottom:8px">✓ Found ${events.length} events to import</p>
+    <div style="max-height:200px;overflow-y:auto">
+    <table class="import-table">
+      <tr><th>Title</th><th>Category</th><th>Start Date</th><th>Time</th></tr>
+      ${events.slice(0, 20).map(e => `<tr>
+        <td>${e.title}</td>
+        <td>${e.category}</td>
+        <td>${e.startDate}</td>
+        <td>${e.startTime || 'All day'}</td>
+      </tr>`).join('')}
+      ${events.length > 20 ? `<tr><td colspan="4" style="color:var(--text2)">...and ${events.length - 20} more</td></tr>` : ''}
+    </table>
+    </div>
+  `;
+  document.getElementById('importConfirmBtn').style.display = 'inline-block';
+}
+
+function confirmImport() {
+  if (importBuffer.length === 0) return;
+  DB.events = [...DB.events, ...importBuffer];
+  saveStorage(DB);
+  importBuffer = [];
+  document.getElementById('importPreview').innerHTML = '';
+  document.getElementById('importConfirmBtn').style.display = 'none';
+  closeModal();
+  render();
+  showToast(`${importBuffer.length || 'Events'} imported ✓`, 'success');
+}
+
+// Drag & drop for import — attached at boot time to avoid null reference errors
+function attachDropZoneListeners() {
+  const dz = document.getElementById('importDropZone');
+  if (!dz) return;
+  dz.addEventListener('dragover', e => {
+    e.preventDefault();
+    dz.style.borderColor = 'var(--accent)';
+  });
+  dz.addEventListener('dragleave', () => {
+    dz.style.borderColor = '';
+  });
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = ev => parseImportCSV(ev.target.result);
+      reader.readAsText(file);
+    }
+  });
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+
+function buildICSEvents(events) {
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Q Calendar Planner//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH'
+  ];
+
+  events.forEach(e => {
+    const startDT = e.startTime
+      ? e.startDate.replace(/-/g,'') + 'T' + e.startTime.replace(':','') + '00'
+      : e.startDate.replace(/-/g,'');
+    const endDT = e.endTime
+      ? (e.endDate || e.startDate).replace(/-/g,'') + 'T' + e.endTime.replace(':','') + '00'
+      : (e.endDate || e.startDate).replace(/-/g,'');
+    const isAllDay = !e.startTime;
+
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${e.id}@qcalendar`);
+    lines.push(`SUMMARY:${e.title}`);
+    if (isAllDay) {
+      lines.push(`DTSTART;VALUE=DATE:${startDT}`);
+      lines.push(`DTEND;VALUE=DATE:${endDT}`);
+    } else {
+      lines.push(`DTSTART:${startDT}`);
+      lines.push(`DTEND:${endDT}`);
+    }
+    if (e.location) lines.push(`LOCATION:${e.location}`);
+    if (e.description) lines.push(`DESCRIPTION:${e.description}`);
+    lines.push(`CATEGORIES:${e.category}`);
+    lines.push('END:VEVENT');
+  });
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
+function getAllExpandedEvents() {
+  // Expand recurring rules for this year
+  const year = new Date().getFullYear();
+  const events = [...DB.events];
+
+  for (const rule of DB.recurringRules) {
+    const start = new Date(rule.startDate + 'T00:00:00');
+    const end = new Date(rule.endDate + 'T00:00:00');
+    const cur = new Date(start);
+
+    while (cur <= end) {
+      if (rule.days.includes(cur.getDay())) {
+        const ds = toDateStr(cur);
+        events.push({
+          id: rule.id + '_' + ds,
+          title: rule.title,
+          category: rule.category,
+          startDate: ds, endDate: ds,
+          startTime: rule.startTime, endTime: rule.endTime,
+          location: rule.location, description: rule.description
+        });
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+
+  return events;
+}
+
+function exportToOutlook() {
+  if (!can('export')) { showToast('You do not have permission to export', 'error'); return; }
+  const events = getAllExpandedEvents();
+  const ics = buildICSEvents(events);
+  const blob = new Blob([ics], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'calendar_export_outlook.ics';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Exported for Outlook (.ics) ✓', 'success');
+}
+
+function exportToGoogle() {
+  if (!can('export')) { showToast('You do not have permission to export', 'error'); return; }
+  const events = getAllExpandedEvents();
+  const header = 'Subject,Start Date,Start Time,End Date,End Time,All Day Event,Description,Location';
+  const rows = events.map(e => {
+    const allDay = !e.startTime ? 'True' : 'False';
+    const st = e.startTime ? fmtTime(e.startTime) : '';
+    const et = e.endTime ? fmtTime(e.endTime) : '';
+    return `"${e.title}","${e.startDate}","${st}","${e.endDate || e.startDate}","${et}","${allDay}","${e.description || ''}","${e.location || ''}"`;
+  });
+  const csv = header + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'calendar_export_google.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Exported for Google Calendar (.csv) ✓', 'success');
+}
+
+function exportToCSV() {
+  if (!can('export')) { showToast('You do not have permission to export', 'error'); return; }
+  const events = getAllExpandedEvents();
+  // Sort by date
+  events.sort((a, b) => (a.startDate > b.startDate ? 1 : a.startDate < b.startDate ? -1 : 0));
+  const header = 'Title,Category,Group,StartDate,EndDate,StartTime,EndTime,Location,Description,IsRecurring';
+  const rows = events.map(e => {
+    const cat = getCat(e.category);
+    const group = cat.group || '';
+    const isRec = e.isRecurring ? 'Yes' : 'No';
+    const clean = v => `"${(v||'').replace(/"/g,'""')}"`;
+    return [
+      clean(e.title), clean(e.category), clean(group),
+      clean(e.startDate), clean(e.endDate || e.startDate),
+      clean(e.startTime || ''), clean(e.endTime || ''),
+      clean(e.location || ''), clean(e.description || ''),
+      clean(isRec)
+    ].join(',');
+  });
+  const csv = header + '\n' + rows.join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dt = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `qcalendar_export_${dt}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast(`Exported ${events.length} events to CSV ✓`, 'success');
+}
+
+// ── PDF REPORT ───────────────────────────────────────────────
+
+function initPdfModal() {
+  const today = toDateStr(new Date());
+  const yearEnd = `${new Date().getFullYear()}-12-31`;
+  document.getElementById('rptStartDate').value = today;
+  document.getElementById('rptEndDate').value = yearEnd;
+
+  const el = document.getElementById('rptCategories');
+  el.innerHTML = DB.categories.map(c => `
+    <label class="cat-check-label">
+      <input type="checkbox" value="${c.code}" checked>
+      <span style="width:8px;height:8px;border-radius:50%;background:${c.color};display:inline-block"></span>
+      ${c.code}
+    </label>
+  `).join('');
+}
+
+function generatePDF() {
+  const startDate = document.getElementById('rptStartDate').value;
+  const endDate = document.getElementById('rptEndDate').value;
+  const rptTitle = document.getElementById('rptTitle').value || 'Calendar Report';
+  const format = document.querySelector('input[name="rptFormat"]:checked').value;
+
+  const selectedCats = new Set(
+    [...document.querySelectorAll('#rptCategories input:checked')].map(i => i.value)
+  );
+
+  if (!startDate || !endDate) { showToast('Please set date range', 'error'); return; }
+
+  // Build events in range
+  const events = [];
+  const start = new Date(startDate + 'T00:00:00');
+  const end = new Date(endDate + 'T00:00:00');
+  const cur = new Date(start);
+
+  while (cur <= end) {
+    const ds = toDateStr(cur);
+    const dayEvts = getEventsForDate(ds).filter(e => selectedCats.has(e.category));
+    dayEvts.forEach(e => events.push({ ...e, _dateStr: ds }));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const printWin = window.open('', '_blank');
+  if (!printWin) { showToast('Please allow popups to generate PDF', 'error'); return; }
+
+  const catColors = {};
+  DB.categories.forEach(c => catColors[c.code] = c.color);
+
+  const rows = format === 'list'
+    ? events.map(e => `
+        <tr>
+          <td style="white-space:nowrap">${fmtDate(e._dateStr)}</td>
+          <td><span style="background:${catColors[e.category]||'#888'};color:#fff;padding:2px 6px;border-radius:3px;font-size:11px">${e.category}</span></td>
+          <td style="font-weight:600">${e.title}</td>
+          <td style="color:#666;font-size:12px">${e.startTime ? fmtTime(e.startTime) + (e.endTime ? ' – '+fmtTime(e.endTime) : '') : 'All day'}</td>
+          <td style="color:#666;font-size:12px">${e.location || ''}</td>
+        </tr>
+      `).join('')
+    : '';
+
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${rptTitle}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+        h1 { font-size: 22px; margin-bottom: 4px; }
+        .sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f0f0f0; padding: 8px 10px; text-align: left; border: 1px solid #ddd; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 7px 10px; border: 1px solid #eee; }
+        tr:nth-child(even) td { background: #fafafa; }
+        .count { color: #666; font-size: 12px; margin-bottom: 12px; }
+        @media print { @page { margin: 1in; } }
+      </style>
+    </head>
+    <body>
+      <h1>${rptTitle}</h1>
+      <div class="sub">Date Range: ${fmtDate(startDate)} – ${fmtDate(endDate)} · Generated ${fmtDate(new Date())}</div>
+      <div class="count">${events.length} events across ${selectedCats.size} categories</div>
+      ${format === 'list' ? `
+        <table>
+          <tr><th>Date</th><th>Category</th><th>Event</th><th>Time</th><th>Location</th></tr>
+          ${rows}
+        </table>
+      ` : `<p>Calendar grid view coming soon — use List View for now.</p>`}
+    </body>
+    </html>
+  `);
+
+  printWin.document.close();
+  setTimeout(() => { printWin.focus(); printWin.print(); }, 500);
+  closeModal();
+  showToast('PDF report opened for printing ✓', 'success');
+}
+
+// ── BACKUP & RESTORE ─────────────────────────────────────────
+
+function backupData() {
+  if (!can('backupRestore')) { showToast('You do not have permission to backup data', 'error'); return; }
+  const data = { ...DB, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dt = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `qcalendar_backup_${dt}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Backup downloaded ✓', 'success');
+}
+
+function restoreData(event) {
+  if (!can('backupRestore')) { showToast('You do not have permission to restore data', 'error'); return; }
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.events || !data.categories) { showToast('Invalid backup file', 'error'); return; }
+      if (!confirm('This will replace all current calendar data. Continue?')) return;
+      DB = data;
+      saveStorage(DB);
+      activeFilters = new Set(DB.categories.map(c => c.code));
+      renderGroupFilters();
+      renderCategoryFilters();
+      render();
+      showToast('Data restored successfully ✓', 'success');
+    } catch { showToast('Failed to parse backup file', 'error'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ── ROLLOVER ─────────────────────────────────────────────────
+
+function initRolloverModal() {
+  const years = [2024, 2025, 2026, 2027];
+  const currentYear = new Date().getFullYear();
+  const from = document.getElementById('rolloverFrom');
+  const to = document.getElementById('rolloverTo');
+  from.innerHTML = years.map(y => `<option ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
+  to.innerHTML = years.map(y => `<option ${y === currentYear+1 ? 'selected' : ''}>${y}</option>`).join('');
+}
+
+function doRollover() {
+  const fromYear = +document.getElementById('rolloverFrom').value;
+  const toYear = +document.getElementById('rolloverTo').value;
+  const overwrite = document.getElementById('rolloverOverwrite').checked;
+
+  if (fromYear === toYear) { showToast('Source and target years must differ', 'error'); return; }
+
+  let count = 0;
+  const newRules = DB.recurringRules.map(r => {
+    if (!r.startDate.startsWith(fromYear)) return null;
+    const newStart = r.startDate.replace(fromYear, toYear);
+    const newEnd = r.endDate.replace(fromYear, toYear);
+    const existing = DB.recurringRules.find(x => x.title === r.title && x.startDate.startsWith(toYear));
+    if (existing && !overwrite) return null;
+    count++;
+    return { ...r, id: uid(), startDate: newStart, endDate: newEnd };
+  }).filter(Boolean);
+
+  if (overwrite) {
+    DB.recurringRules = DB.recurringRules.filter(r => !r.startDate.startsWith(toYear));
+  }
+  DB.recurringRules = [...DB.recurringRules, ...newRules];
+  saveStorage(DB);
+  closeModal();
+  render();
+  showToast(`Rolled over ${count} recurring rules to ${toYear} ✓`, 'success');
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ── SECURITY LAYER ───────────────────────────────────────────
+
+const AUTH_KEY = 'calendarAuth';
+const USERS_KEY = 'calendarUsers';
+
+const ALL_PERMS = [
+  { key:'viewCalendar',    label:'View Calendar' },
+  { key:'addEvents',       label:'Add Events' },
+  { key:'editEvents',      label:'Edit Events' },
+  { key:'deleteEvents',    label:'Delete Events' },
+  { key:'manageCategories',label:'Manage Categories' },
+  { key:'manageRecurring', label:'Manage Recurring Rules' },
+  { key:'bulkImport',      label:'Bulk Import' },
+  { key:'export',          label:'Export (CSV/ICS/PDF)' },
+  { key:'backupRestore',   label:'Backup & Restore' },
+  { key:'manageUsers',     label:'Manage Users' },
+];
+
+const ALL_PERM_KEYS = ALL_PERMS.map(p => p.key);
+
+function loadUsers() {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  // Debounced Google Drive push
+  if (gdriveConfig && gdriveConfig.access_token) {
+    clearTimeout(saveUsers._timer);
+    saveUsers._timer = setTimeout(syncToGDrive, 2000);
+  }
+}
+saveUsers._timer = null;
+
+function hashPassword(pw) {
+  // Simple deterministic hash for local storage (not cryptographic, but fine for local app)
+  let h = 0;
+  for (let i = 0; i < pw.length; i++) {
+    h = ((h << 5) - h) + pw.charCodeAt(i);
+    h |= 0;
+  }
+  return 'h' + Math.abs(h).toString(36) + pw.length;
+}
+
+let USERS = loadUsers();
+if (!USERS) {
+  USERS = [
+    {
+      id: 'admin',
+      username: 'admin',
+      displayName: 'Administrator',
+      passwordHash: hashPassword('admin123'),
+      color: '#6c63ff',
+      isAdmin: true,
+      permissions: ALL_PERM_KEYS,
+      visibleGroups: [],   // empty = all
+      visibleCategories: [] // empty = all
+    }
+  ];
+  saveUsers(USERS);
+}
+
+let currentUser = null;
+
+function getSession() {
+  try {
+    const s = sessionStorage.getItem(AUTH_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
+function setSession(userId) {
+  sessionStorage.setItem(AUTH_KEY, JSON.stringify({ userId }));
+}
+
+function clearSession() {
+  sessionStorage.removeItem(AUTH_KEY);
+}
+
+function can(perm) {
+  if (!currentUser) return false;
+  if (currentUser.isAdmin) return true;
+  return currentUser.permissions.includes(perm);
+}
+
+function canSeeCategory(code) {
+  if (!currentUser) return false;
+  if (currentUser.isAdmin) return true;
+  const cat = getCat(code);
+  // If visibleGroups is restricted, the category's group must be in the list
+  if (currentUser.visibleGroups.length > 0 && !currentUser.visibleGroups.includes(cat.group)) return false;
+  // If visibleCategories is restricted, the category code must be in the list
+  // This is checked INDEPENDENTLY - both must pass
+  if (currentUser.visibleCategories.length > 0 && !currentUser.visibleCategories.includes(code)) return false;
+  return true;
+}
+
+function doLogin() {
+  const uname = document.getElementById('login-username').value.trim().toLowerCase();
+  const pw = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+
+  const user = USERS.find(u => u.username.toLowerCase() === uname && u.passwordHash === hashPassword(pw));
+  if (!user) {
+    errEl.classList.add('show');
+    document.getElementById('login-password').value = '';
+    return;
+  }
+  errEl.classList.remove('show');
+  currentUser = user;
+  setSession(user.id);
+  bootApp();
+}
+
+function doLogout() {
+  currentUser = null;
+  clearSession();
+  document.getElementById('user-menu').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+function bootApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  attachDropZoneListeners();
+  attachDayDetailListeners();
+  applyPermissions();
+  // Restore Google Drive connection status
+  if (gdriveConfig.access_token) {
+    updateGDriveStatus('connected', 'Connected');
+    syncFromGDrive(); // pull latest data on login
+  } else {
+    updateGDriveStatus('disconnected', 'Google Drive');
+  }
+  // Restrict activeFilters to visible categories
+  activeFilters = new Set(DB.categories.filter(c => canSeeCategory(c.code)).map(c => c.code));
+  renderGroupFilters();
+  renderCategoryFilters();
+  render();
+}
+
+function applyPermissions() {
+  // Update user chip
+  const chip = document.getElementById('chip-avatar');
+  chip.style.background = currentUser.color;
+  chip.textContent = (currentUser.displayName || currentUser.username)[0].toUpperCase();
+  document.getElementById('chip-name').textContent = currentUser.displayName || currentUser.username;
+
+  // Nav buttons
+  const rules = [
+    ['nav-addEvent',      'addEvents'],
+    ['nav-categories',    'manageCategories'],
+    ['nav-recurring',     'manageRecurring'],
+    ['nav-bulkImport',    'bulkImport'],
+    ['nav-exportOutlook', 'export'],
+    ['nav-exportGoogle',  'export'],
+    ['nav-exportCSV',     'export'],
+    ['nav-pdfReport',     'export'],
+    ['nav-backup',        'backupRestore'],
+    ['nav-restore',       'backupRestore'],
+    ['nav-rollover',      'backupRestore'],
+    ['nav-manageUsers',   'manageUsers'],
+  ];
+
+  rules.forEach(([id, perm]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (can(perm)) el.classList.remove('perm-hidden');
+    else el.classList.add('perm-hidden');
+  });
+}
+
+function showUserMenu() {
+  const menu = document.getElementById('user-menu');
+  const visible = menu.style.display !== 'none' && menu.style.display !== '';
+  menu.style.display = visible ? 'none' : 'block';
+  document.getElementById('user-menu-name').textContent = currentUser.displayName + ' (' + (currentUser.isAdmin ? 'Admin' : 'User') + ')';
+}
+
+document.addEventListener('click', e => {
+  const menu = document.getElementById('user-menu');
+  const chip = document.getElementById('user-chip');
+  if (menu && !menu.contains(e.target) && chip && !chip.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+// ── CHANGE PASSWORD ───────────────────────────────────────────
+
+function changePassword() {
+  const cur = document.getElementById('cpCurrent').value;
+  const nw = document.getElementById('cpNew').value;
+  const conf = document.getElementById('cpConfirm').value;
+
+  if (currentUser.passwordHash !== hashPassword(cur)) { showToast('Current password incorrect', 'error'); return; }
+  if (!nw) { showToast('New password cannot be empty', 'error'); return; }
+  if (nw !== conf) { showToast('Passwords do not match', 'error'); return; }
+
+  const idx = USERS.findIndex(u => u.id === currentUser.id);
+  USERS[idx].passwordHash = hashPassword(nw);
+  currentUser = USERS[idx];
+  saveUsers(USERS);
+  closeModal();
+  showToast('Password updated ✓', 'success');
+}
+
+// ── USER MANAGEMENT ───────────────────────────────────────────
+
+let editingUserId = null;
+
+function initManageUsersModal() {
+  showUserList();
+}
+
+function showUserList() {
+  document.getElementById('user-list-section').style.display = 'block';
+  document.getElementById('user-edit-section').style.display = 'none';
+  document.getElementById('save-user-btn').style.display = 'none';
+  renderUserList();
+}
+
+function renderUserList() {
+  const el = document.getElementById('user-list');
+  el.innerHTML = USERS.map(u => {
+    const isMe = u.id === currentUser.id;
+    const permCount = u.isAdmin ? 'Full Access' : `${u.permissions.length} permissions`;
+    return `
+      <div class="user-row">
+        <div class="user-avatar" style="background:${u.color}">${(u.displayName||u.username)[0].toUpperCase()}</div>
+        <div class="user-info">
+          <div class="user-name">${u.displayName} <span style="color:var(--text2);font-weight:400;font-size:12px">@${u.username}</span>${isMe ? ' <span style="font-size:10px;color:var(--accent2)">(you)</span>' : ''}</div>
+          <div class="user-role">${permCount}</div>
+        </div>
+        <span class="user-badge ${u.isAdmin ? 'badge-admin' : 'badge-user'}">${u.isAdmin ? 'Admin' : 'User'}</span>
+        <button class="act-btn" onclick="editUser('${u.id}')">✎</button>
+        ${!u.isAdmin && !isMe ? `<button class="act-btn del" onclick="deleteUser('${u.id}')">✕</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function showAddUser() {
+  editingUserId = null;
+  document.getElementById('user-edit-title').textContent = 'New User';
+  document.getElementById('editUserId').value = '';
+  document.getElementById('editUsername').value = '';
+  document.getElementById('editDisplayName').value = '';
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editPasswordConfirm').value = '';
+  document.getElementById('editUserColor').value = '#' + Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0');
+  buildPermGrid(ALL_PERM_KEYS);
+  buildVisGrid([], []);
+  switchUserTab('account');
+  document.getElementById('user-list-section').style.display = 'none';
+  document.getElementById('user-edit-section').style.display = 'block';
+  document.getElementById('save-user-btn').style.display = 'inline-block';
+}
+
+function editUser(id) {
+  const u = USERS.find(u => u.id === id);
+  if (!u) return;
+  editingUserId = id;
+  document.getElementById('user-edit-title').textContent = 'Edit User';
+  document.getElementById('editUserId').value = id;
+  document.getElementById('editUsername').value = u.username;
+  document.getElementById('editDisplayName').value = u.displayName;
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editPasswordConfirm').value = '';
+  document.getElementById('editUserColor').value = u.color;
+  buildPermGrid(u.permissions);
+  buildVisGrid(u.visibleGroups, u.visibleCategories);
+  switchUserTab('account');
+  document.getElementById('user-list-section').style.display = 'none';
+  document.getElementById('user-edit-section').style.display = 'block';
+  document.getElementById('save-user-btn').style.display = 'inline-block';
+}
+
+function buildPermGrid(current) {
+  const grid = document.getElementById('perm-grid');
+  grid.innerHTML = ALL_PERMS.map(p => `
+    <div class="perm-item" onclick="this.querySelector('input').click()">
+      <input type="checkbox" value="${p.key}" ${current.includes(p.key) ? 'checked' : ''} onclick="event.stopPropagation()">
+      <label>${p.label}</label>
+    </div>
+  `).join('');
+}
+
+function buildVisGrid(visGroups, visCats) {
+  const groups = [...new Set(DB.categories.map(c => c.group))].sort();
+
+  // visGroups === [] means "all groups allowed" (no restriction)
+  // visGroups === ['Work'] means only Work group is allowed
+  const allGroupsAllowed = visGroups.length === 0;
+
+  // visCategories === [] means "all categories allowed" (no restriction)
+  const allCatsAllowed = visCats.length === 0;
+
+  document.getElementById('vis-groups').innerHTML = `
+    <div class="vis-pill" id="vis-all-groups-pill" onclick="toggleAllVisGroups()" style="${allGroupsAllowed ? 'border-color:var(--accent);color:var(--text)' : ''}">
+      <input type="checkbox" ${allGroupsAllowed ? 'checked' : ''} style="display:none" id="vis-all-groups">
+      <span style="font-size:11px">★ All Groups</span>
+    </div>
+    ${groups.map(g => {
+      const checked = allGroupsAllowed || visGroups.includes(g);
+      return `
+        <div class="vis-pill ${checked ? 'vis-checked' : ''}" onclick="toggleVisGroup('${g}')" id="vis-group-${g.replace(/\s/g,'_')}">
+          <input type="checkbox" class="vis-group-cb" value="${g}" ${checked ? 'checked' : ''} style="display:none">
+          <span>${g}</span>
+        </div>
+      `;
+    }).join('')}
+  `;
+
+  document.getElementById('vis-categories').innerHTML = `
+    <div class="vis-pill" id="vis-all-cats-pill" onclick="toggleAllVisCats()" style="${allCatsAllowed ? 'border-color:var(--accent);color:var(--text)' : ''}">
+      <input type="checkbox" ${allCatsAllowed ? 'checked' : ''} style="display:none" id="vis-all-cats">
+      <span style="font-size:11px">★ All Categories</span>
+    </div>
+    ${DB.categories.map(c => {
+      const checked = allCatsAllowed || visCats.includes(c.code);
+      return `
+        <div class="vis-pill ${checked ? 'vis-checked' : ''}" onclick="toggleVisCat('${c.code}')" id="vis-cat-${c.code}">
+          <input type="checkbox" class="vis-cat-cb" value="${c.code}" ${checked ? 'checked' : ''} style="display:none">
+          <div class="vis-pill-dot" style="background:${c.color}"></div>
+          <span>${c.code}</span>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function toggleAllVisGroups() {
+  const allCb = document.getElementById('vis-all-groups');
+  const newState = !allCb.checked;
+  allCb.checked = newState;
+  const pill = document.getElementById('vis-all-groups-pill');
+  if (pill) { pill.style.borderColor = newState ? 'var(--accent)' : ''; pill.style.color = newState ? 'var(--text)' : ''; }
+  // When "All Groups" is checked, check all individual groups too
+  document.querySelectorAll('.vis-group-cb').forEach(cb => {
+    cb.checked = newState;
+    const id = 'vis-group-' + cb.value.replace(/\s/g,'_');
+    const p = document.getElementById(id);
+    if (p) { p.style.borderColor = newState ? 'var(--accent)' : ''; p.style.color = newState ? 'var(--text)' : ''; p.classList.toggle('vis-checked', newState); }
+  });
+}
+
+function toggleVisGroup(group) {
+  const id = 'vis-group-' + group.replace(/\s/g,'_');
+  const pill = document.getElementById(id);
+  const cb = pill ? pill.querySelector('input') : null;
+  if (!cb) return;
+  const newState = !cb.checked;
+  cb.checked = newState;
+  if (pill) { pill.style.borderColor = newState ? 'var(--accent)' : ''; pill.style.color = newState ? 'var(--text)' : ''; pill.classList.toggle('vis-checked', newState); }
+  // If any individual group is unchecked, uncheck "All Groups"
+  const allCb = document.getElementById('vis-all-groups');
+  const allPill = document.getElementById('vis-all-groups-pill');
+  const allChecked = [...document.querySelectorAll('.vis-group-cb')].every(c => c.checked);
+  if (allCb) allCb.checked = allChecked;
+  if (allPill) { allPill.style.borderColor = allChecked ? 'var(--accent)' : ''; allPill.style.color = allChecked ? 'var(--text)' : ''; }
+}
+
+function toggleAllVisCats() {
+  const allCb = document.getElementById('vis-all-cats');
+  const newState = !allCb.checked;
+  allCb.checked = newState;
+  const pill = document.getElementById('vis-all-cats-pill');
+  if (pill) { pill.style.borderColor = newState ? 'var(--accent)' : ''; pill.style.color = newState ? 'var(--text)' : ''; }
+  document.querySelectorAll('.vis-cat-cb').forEach(cb => {
+    cb.checked = newState;
+    const p = document.getElementById('vis-cat-' + cb.value);
+    if (p) { p.style.borderColor = newState ? 'var(--accent)' : ''; p.style.color = newState ? 'var(--text)' : ''; p.classList.toggle('vis-checked', newState); }
+  });
+}
+
+function toggleVisCat(code) {
+  const pill = document.getElementById('vis-cat-' + code);
+  const cb = pill ? pill.querySelector('input') : null;
+  if (!cb) return;
+  const newState = !cb.checked;
+  cb.checked = newState;
+  if (pill) { pill.style.borderColor = newState ? 'var(--accent)' : ''; pill.style.color = newState ? 'var(--text)' : ''; pill.classList.toggle('vis-checked', newState); }
+  // Update "All Categories" pill
+  const allCb = document.getElementById('vis-all-cats');
+  const allPill = document.getElementById('vis-all-cats-pill');
+  const allChecked = [...document.querySelectorAll('.vis-cat-cb')].every(c => c.checked);
+  if (allCb) allCb.checked = allChecked;
+  if (allPill) { allPill.style.borderColor = allChecked ? 'var(--accent)' : ''; allPill.style.color = allChecked ? 'var(--text)' : ''; }
+}
+
+function syncVisAll() {} // kept for compatibility, no longer needed
+
+function switchUserTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const tabs = ['account','permissions','visibility'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function saveUser() {
+  const id = document.getElementById('editUserId').value || uid();
+  const username = document.getElementById('editUsername').value.trim().toLowerCase();
+  const displayName = document.getElementById('editDisplayName').value.trim();
+  const pw = document.getElementById('editPassword').value;
+  const pwConf = document.getElementById('editPasswordConfirm').value;
+  const color = document.getElementById('editUserColor').value;
+
+  if (!username || !displayName) { showToast('Username and Display Name required', 'error'); return; }
+
+  // Check username uniqueness
+  const dup = USERS.find(u => u.username.toLowerCase() === username && u.id !== id);
+  if (dup) { showToast('Username already exists', 'error'); return; }
+
+  // Password
+  let passwordHash;
+  if (pw) {
+    if (pw !== pwConf) { showToast('Passwords do not match', 'error'); return; }
+    passwordHash = hashPassword(pw);
+  } else {
+    const existing = USERS.find(u => u.id === id);
+    if (!existing) { showToast('Password required for new user', 'error'); return; }
+    passwordHash = existing.passwordHash;
+  }
+
+  // Permissions
+  const permissions = [...document.querySelectorAll('#perm-grid input:checked')].map(i => i.value);
+
+  // Visibility — empty array means "no restriction / all allowed"
+  const allGroupsCb = document.getElementById('vis-all-groups');
+  const groupCbs = [...document.querySelectorAll('.vis-group-cb')];
+  const allGroupsChecked = allGroupsCb && allGroupsCb.checked;
+  const visibleGroups = allGroupsChecked
+    ? []  // empty = all groups allowed
+    : groupCbs.filter(cb => cb.checked).map(cb => cb.value);
+
+  const allCatsCb = document.getElementById('vis-all-cats');
+  const catCbs = [...document.querySelectorAll('.vis-cat-cb')];
+  const allCatsChecked = allCatsCb && allCatsCb.checked;
+  const visibleCategories = allCatsChecked
+    ? []  // empty = all categories allowed
+    : catCbs.filter(cb => cb.checked).map(cb => cb.value);
+
+  const isAdmin = USERS.find(u => u.id === id)?.isAdmin || false;
+  const newUser = { id, username, displayName, passwordHash, color, isAdmin, permissions, visibleGroups, visibleCategories };
+
+  const idx = USERS.findIndex(u => u.id === id);
+  if (idx >= 0) USERS[idx] = newUser;
+  else USERS.push(newUser);
+
+  // If editing current user, refresh their session
+  if (id === currentUser.id) {
+    currentUser = newUser;
+    applyPermissions();
+  }
+
+  saveUsers(USERS);
+  showUserList();
+  showToast('User saved ✓', 'success');
+}
+
+function deleteUser(id) {
+  if (!confirm('Delete this user?')) return;
+  USERS = USERS.filter(u => u.id !== id);
+  saveUsers(USERS);
+  renderUserList();
+  showToast('User deleted', 'error');
+}
+
+// ── GOOGLE DRIVE INTEGRATION ─────────────────────────────────
+//
+// Config constants (GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET,
+// GDRIVE_REDIRECT_URI, GDRIVE_KEY, gdriveConfig, saveGdriveConfig)
+// are defined near the top of the script.
+
+// ── OAuth Flow ────────────────────────────────────────────────
+
+function startGoogleOAuth() {
+  if (!currentUser) return;
+  // Save userId so we can restore it after the OAuth redirect returns
+  sessionStorage.setItem('gdrive_pending_user', currentUser.id);
+  const params = new URLSearchParams({
+    client_id:     GDRIVE_CLIENT_ID,
+    redirect_uri:  GDRIVE_REDIRECT_URI,
+    response_type: 'code',
+    scope:         'https://www.googleapis.com/auth/drive.file',
+    access_type:   'offline',
+    prompt:        'consent',   // ensures refresh_token is always returned
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+async function handleGoogleOAuthCallback(code) {
+  try {
+    gdriveLog('Exchanging authorization code for tokens...', 'info');
+    updateGDriveStatus('syncing', 'Connecting...');
+
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id:     GDRIVE_CLIENT_ID,
+        client_secret: GDRIVE_CLIENT_SECRET,
+        redirect_uri:  GDRIVE_REDIRECT_URI,
+        grant_type:    'authorization_code',
+      }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error_description || 'Token exchange failed');
+    }
+
+    const tokens = await resp.json();
+    // Merge carefully — refresh_token only arrives on first consent
+    const existing = gdriveConfig;
+    gdriveConfig = Object.assign({}, existing, {
+      access_token:  tokens.access_token,
+      refresh_token: tokens.refresh_token || existing.refresh_token || null,
+      expires_at:    Date.now() + (tokens.expires_in - 60) * 1000,
+    });
+    saveGdriveConfig();
+
+    // Verify and get account info
+    const me = await gdriveApiFetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json');
+    gdriveConfig.accountEmail = me.email || '';
+    saveGdriveConfig();
+
+    gdriveLog('✓ Connected as ' + (gdriveConfig.accountEmail || 'Google user'), 'ok');
+    updateGDriveStatus('connected', 'Connected');
+
+    gdriveLog('Ensuring QCalendarPlanner folder exists...', 'info');
+    await ensureGDriveFolder();
+
+    gdriveLog('Checking for existing data files...', 'info');
+    await syncFromGDrive();
+    initGDriveModal();
+  } catch(e) {
+    gdriveLog('OAuth error: ' + e.message, 'err');
+    updateGDriveStatus('error', 'Auth failed');
+    initGDriveModal();
+  }
+}
+
+// ── Token Management ──────────────────────────────────────────
+
+async function getValidAccessToken() {
+  if (!gdriveConfig.access_token) throw new Error('Google Drive not connected');
+
+  if (Date.now() >= (gdriveConfig.expires_at || 0)) {
+    // Access token expired — refresh it
+    if (!gdriveConfig.refresh_token) {
+      gdriveConfig = {};
+      saveGdriveConfig();
+      updateGDriveStatus('disconnected', 'Google Drive');
+      throw new Error('Google Drive session expired — please reconnect');
+    }
+
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id:     GDRIVE_CLIENT_ID,
+        client_secret: GDRIVE_CLIENT_SECRET,
+        refresh_token: gdriveConfig.refresh_token,
+        grant_type:    'refresh_token',
+      }),
+    });
+
+    if (!resp.ok) {
+      gdriveConfig = {};
+      saveGdriveConfig();
+      updateGDriveStatus('disconnected', 'Google Drive');
+      throw new Error('Session expired — please reconnect Google Drive');
+    }
+
+    const fresh = await resp.json();
+    gdriveConfig.access_token = fresh.access_token;
+    gdriveConfig.expires_at   = Date.now() + (fresh.expires_in - 60) * 1000;
+    saveGdriveConfig();
+  }
+
+  return gdriveConfig.access_token;
+}
+
+// ── Drive API helpers ─────────────────────────────────────────
+
+async function gdriveApiFetch(url, options = {}) {
+  const token = await getValidAccessToken();
+  const resp = await fetch(url, {
+    ...options,
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      ...(options.headers || {}),
+    },
+  });
+  if (!resp.ok) {
+    let detail = resp.status + ' ' + resp.statusText;
+    try { const e = await resp.json(); detail += ' — ' + (e.error?.message || JSON.stringify(e)); } catch(e2) {}
+    throw new Error(detail);
+  }
+  const ct = resp.headers.get('content-type') || '';
+  if (ct.includes('application/json')) return resp.json();
+  return resp.text();
+}
+
+async function ensureGDriveFolder() {
+  // Search for existing folder
+  const q = encodeURIComponent(
+    `name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+  );
+  const res = await gdriveApiFetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`
+  );
+  if (res.files && res.files.length > 0) {
+    gdriveConfig.folderId = res.files[0].id;
+    saveGdriveConfig();
+    gdriveLog('✓ Folder found: ' + GDRIVE_FOLDER_NAME, 'ok');
+    return gdriveConfig.folderId;
+  }
+  // Create it
+  const token = await getValidAccessToken();
+  const resp = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: GDRIVE_FOLDER_NAME,
+      mimeType: 'application/vnd.google-apps.folder',
+    }),
+  });
+  if (!resp.ok) throw new Error('Could not create Drive folder');
+  const folder = await resp.json();
+  gdriveConfig.folderId = folder.id;
+  saveGdriveConfig();
+  gdriveLog('✓ Created folder: ' + GDRIVE_FOLDER_NAME, 'ok');
+  return folder.id;
+}
+
+async function gdriveGetFileId(filename) {
+  if (!gdriveConfig.folderId) await ensureGDriveFolder();
+  const q = encodeURIComponent(
+    `name='${filename}' and '${gdriveConfig.folderId}' in parents and trashed=false`
+  );
+  const res = await gdriveApiFetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`
+  );
+  return (res.files && res.files.length > 0) ? res.files[0].id : null;
+}
+
+async function gdriveUploadFile(filename, content) {
+  const token = await getValidAccessToken();
+  if (!gdriveConfig.folderId) await ensureGDriveFolder();
+
+  const existingId = await gdriveGetFileId(filename);
+  const metadata = { name: filename };
+  const blob = new Blob([content], { type: 'application/json' });
+
+  let url, method;
+  if (existingId) {
+    // Update existing file
+    url = `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`;
+    method = 'PATCH';
+  } else {
+    // Create new file in folder
+    metadata.parents = [gdriveConfig.folderId];
+    url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    method = 'POST';
+  }
+
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', blob);
+
+  const resp = await fetch(url, {
+    method,
+    headers: { 'Authorization': 'Bearer ' + token },
+    body: form,
+  });
+  if (!resp.ok) {
+    let detail = resp.status + ' ' + resp.statusText;
+    try { const e = await resp.json(); detail += ' — ' + (e.error?.message || JSON.stringify(e)); } catch(e2) {}
+    throw new Error('Upload failed: ' + detail);
+  }
+  return resp.json();
+}
+
+async function gdriveDownloadFile(filename) {
+  const fileId = await gdriveGetFileId(filename);
+  if (!fileId) return null; // file doesn't exist yet — first run
+  return gdriveApiFetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`
+  );
+}
+
+// ── Sync Logic ────────────────────────────────────────────────
+
+let syncInProgress = false;
+
+async function syncToGDrive() {
+  if (syncInProgress || !gdriveConfig.access_token) return;
+  syncInProgress = true;
+  updateGDriveStatus('syncing', 'Saving...');
+  try {
+    gdriveLog('Uploading ' + GDRIVE_DATA_FILE + '...', 'info');
+    await gdriveUploadFile(GDRIVE_DATA_FILE, JSON.stringify(DB, null, 2));
+    gdriveLog('✓ ' + GDRIVE_DATA_FILE + ' saved', 'ok');
+
+    gdriveLog('Uploading ' + GDRIVE_USERS_FILE + '...', 'info');
+    await gdriveUploadFile(GDRIVE_USERS_FILE, JSON.stringify(USERS, null, 2));
+    gdriveLog('✓ ' + GDRIVE_USERS_FILE + ' saved', 'ok');
+
+    gdriveConfig.lastSync = new Date().toISOString();
+    saveGdriveConfig();
+    updateGDriveStatus('connected', 'Synced ' + new Date().toLocaleTimeString());
+  } catch(e) {
+    gdriveLog('Save error: ' + e.message, 'err');
+    updateGDriveStatus('error', 'Save failed');
+  }
+  syncInProgress = false;
+}
+
+async function syncFromGDrive() {
+  if (!gdriveConfig.access_token) return;
+  updateGDriveStatus('syncing', 'Loading...');
+  gdriveLog('Loading data from Google Drive...', 'info');
+  try {
+    const [dataRaw, usersRaw] = await Promise.all([
+      gdriveDownloadFile(GDRIVE_DATA_FILE),
+      gdriveDownloadFile(GDRIVE_USERS_FILE),
+    ]);
+
+    if (dataRaw) {
+      const remoteDB = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
+      if (remoteDB.events !== undefined) {
+        DB = remoteDB;
+        saveStorage(DB);
+        gdriveLog('✓ Calendar data loaded', 'ok');
+      }
+    } else {
+      await gdriveUploadFile(GDRIVE_DATA_FILE, JSON.stringify(DB, null, 2));
+      gdriveLog('✓ Initial data uploaded to Drive', 'ok');
+    }
+
+    if (usersRaw) {
+      const remoteUsers = typeof usersRaw === 'string' ? JSON.parse(usersRaw) : usersRaw;
+      if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+        USERS = remoteUsers;
+        saveUsers(USERS);
+        gdriveLog('✓ Users loaded', 'ok');
+      }
+    } else {
+      await gdriveUploadFile(GDRIVE_USERS_FILE, JSON.stringify(USERS, null, 2));
+      gdriveLog('✓ Initial users uploaded to Drive', 'ok');
+    }
+
+    gdriveConfig.lastSync = new Date().toISOString();
+    saveGdriveConfig();
+    updateGDriveStatus('connected', 'Synced ' + new Date().toLocaleTimeString());
+
+    // Refresh UI with synced data
+    activeFilters = new Set(DB.categories.filter(c => canSeeCategory(c.code)).map(c => c.code));
+    renderGroupFilters();
+    renderCategoryFilters();
+    render();
+  } catch(e) {
+    gdriveLog('Load error: ' + e.message, 'err');
+    updateGDriveStatus('error', 'Load failed');
+  }
+}
+
+function disconnectGDrive() {
+  if (!confirm('Disconnect Google Drive? Your local data will remain.')) return;
+  gdriveConfig = {};
+  saveGdriveConfig();
+  updateGDriveStatus('disconnected', 'Google Drive');
+  gdriveLog('Disconnected from Google Drive', 'info');
+  initGDriveModal();
+}
+
+// ── Google Drive UI helpers ───────────────────────────────────
+
+const gdriveSyncLog = [];
+
+function gdriveLog(msg, type = 'info') {
+  gdriveSyncLog.push({ msg, type, time: new Date().toLocaleTimeString() });
+  if (gdriveSyncLog.length > 50) gdriveSyncLog.shift();
+  const el = document.getElementById('gdrive-sync-log');
+  if (el) el.innerHTML = gdriveSyncLog.slice().reverse().map(e =>
+    `<div class="sync-log-entry ${e.type}">[${e.time}] ${e.msg}</div>`
+  ).join('');
+}
+
+function updateGDriveStatus(state, label) {
+  const dot = document.getElementById('gdrive-dot');
+  const lbl = document.getElementById('gdrive-label');
+  if (dot) { dot.className = 'gdrive-dot ' + state; }
+  if (lbl) lbl.textContent = label || 'Google Drive';
+}
+
+function initGDriveModal() {
+  const body   = document.getElementById('gdrive-modal-body');
+  const footer = document.getElementById('gdrive-modal-footer');
+  if (!body) return;
+
+  const isConnected = !!gdriveConfig.access_token;
+
+  if (isConnected) {
+    body.innerHTML = `
+      <div class="gdrive-setup-section" style="border-color:var(--success)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div class="gdrive-dot connected" style="width:10px;height:10px"></div>
+          <strong style="color:var(--success)">Connected to Google Drive</strong>
+          ${gdriveConfig.accountEmail ? `<span style="font-size:12px;color:var(--text2);margin-left:4px">— ${gdriveConfig.accountEmail}</span>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--text2)">Folder: <code style="color:var(--text)">${GDRIVE_FOLDER_NAME}/</code></div>
+        <div style="font-size:12px;color:var(--text2)">Files: <code style="color:var(--text)">${GDRIVE_DATA_FILE}</code>, <code style="color:var(--text)">${GDRIVE_USERS_FILE}</code></div>
+        ${gdriveConfig.lastSync ? `<div style="font-size:12px;color:var(--text2);margin-top:4px">Last sync: ${new Date(gdriveConfig.lastSync).toLocaleString()}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="syncToGDrive().then(()=>initGDriveModal())">↑ Push All Data Now</button>
+        <button class="btn-primary" onclick="syncFromGDrive().then(()=>initGDriveModal())">↓ Pull from Drive</button>
+        <button class="btn-secondary" onclick="disconnectGDrive()">Disconnect</button>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Sync log:</div>
+      <div class="sync-log" id="gdrive-sync-log">${gdriveSyncLog.slice().reverse().map(e=>`<div class="sync-log-entry ${e.type}">[${e.time}] ${e.msg}</div>`).join('')}</div>
+    `;
+    footer.innerHTML = `<button class="btn-secondary" onclick="closeModal()">Close</button>`;
+  } else {
+    const redirectUri = GDRIVE_REDIRECT_URI !== 'YOUR_REDIRECT_URI_HERE'
+      ? GDRIVE_REDIRECT_URI
+      : window.location.href.split('?')[0];
+    body.innerHTML = `
+      <p class="modal-desc">Connect to Google Drive to store your calendar data in the cloud. All users you share the app with will read from and write to the same files based on their permissions.</p>
+
+      <div class="gdrive-setup-section">
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">1</div>
+          <div class="gdrive-step-text">Go to <a class="gdrive-link" href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> → create or select a project → go to <strong>APIs &amp; Services → Credentials</strong>.</div>
+        </div>
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">2</div>
+          <div class="gdrive-step-text">Click <strong>Create Credentials → OAuth client ID</strong> → choose <strong>Web application</strong> → add <code>${redirectUri}</code> as an Authorized redirect URI → save and copy your Client ID and Secret.</div>
+        </div>
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">3</div>
+          <div class="gdrive-step-text">Enable the <strong>Google Drive API</strong> for your project under <strong>APIs &amp; Services → Library</strong>.</div>
+        </div>
+        <div class="gdrive-setup-step">
+          <div class="gdrive-step-num">4</div>
+          <div class="gdrive-step-text">Paste your Client ID and Secret into the <code>GDRIVE_CLIENT_ID</code> and <code>GDRIVE_CLIENT_SECRET</code> constants near the top of this file's script, then click <strong>Connect</strong> below.</div>
+        </div>
+      </div>
+
+      ${GDRIVE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE' ? `
+        <div style="background:var(--danger);color:#fff;border-radius:6px;padding:10px 14px;font-size:12px;margin-bottom:12px">
+          ⚠ <strong>Setup required:</strong> Open the HTML file in a text editor and fill in <code>GDRIVE_CLIENT_ID</code>, <code>GDRIVE_CLIENT_SECRET</code>, and <code>GDRIVE_REDIRECT_URI</code> before connecting.
+        </div>
+      ` : ''}
+    `;
+    footer.innerHTML = `
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="startGoogleOAuth()" ${GDRIVE_CLIENT_ID === 'YOUR_CLIENT_ID_HERE' ? 'disabled title="Fill in credentials first"' : ''}>Connect Google Drive</button>
+    `;
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+(async () => {
+  // 1. Handle Google OAuth callback (?code=... returned from Google)
+  const urlParams = new URLSearchParams(window.location.search);
+  const oauthCode = urlParams.get('code');
+  if (oauthCode) {
+    // Strip the code from the URL immediately — auth codes are single-use
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Restore the user who initiated the OAuth flow
+    const pendingUserId = sessionStorage.getItem('gdrive_pending_user');
+    if (pendingUserId) {
+      sessionStorage.removeItem('gdrive_pending_user');
+      const u = USERS.find(u => u.id === pendingUserId);
+      if (u) {
+        currentUser = u;
+        bootApp();
+        await handleGoogleOAuthCallback(oauthCode);
+      } else {
+        // User not found — just exchange token silently (settings-only flow)
+        await handleGoogleOAuthCallback(oauthCode);
+      }
+    } else {
+      // No pending user saved — exchange token anyway (e.g. reconnect from settings)
+      await handleGoogleOAuthCallback(oauthCode);
+    }
+    return;
+  }
+
+  // 2. Normal load — check for existing session
+  const sess = getSession();
+  if (sess) {
+    const u = USERS.find(u => u.id === sess.userId);
+    if (u) {
+      currentUser = u;
+      bootApp();
+    }
+  }
+  // Otherwise login screen stays visible
+})();
+</script>
+</body>
+</html>
