@@ -3711,10 +3711,7 @@ function initGDriveModal() {
   const urlParams = new URLSearchParams(window.location.search);
   const oauthCode = urlParams.get('code');
   if (oauthCode) {
-    // Strip the code from the URL immediately — auth codes are single-use
     window.history.replaceState({}, document.title, window.location.pathname);
-
-    // Restore the user who initiated the OAuth flow
     const pendingUserId = sessionStorage.getItem('gdrive_pending_user');
     if (pendingUserId) {
       sessionStorage.removeItem('gdrive_pending_user');
@@ -3724,23 +3721,49 @@ function initGDriveModal() {
         bootApp();
         await handleGoogleOAuthCallback(oauthCode);
       } else {
-        // User not found — just exchange token silently (settings-only flow)
         await handleGoogleOAuthCallback(oauthCode);
       }
     } else {
-      // No pending user saved — exchange token anyway (e.g. reconnect from settings)
       await handleGoogleOAuthCallback(oauthCode);
     }
     return;
   }
 
-  // 2. Normal load — check for existing session
+  // 2. Pre-login sync — pull latest users and data from Drive
+  //    so other users can log in on a fresh browser
+  if (gdriveConfig.access_token) {
+    try {
+      updateGDriveStatus('syncing', 'Loading...');
+      const usersRaw = await gdriveDownloadFile(GDRIVE_USERS_FILE);
+      if (usersRaw) {
+        const remoteUsers = typeof usersRaw === 'string' ? JSON.parse(usersRaw) : usersRaw;
+        if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+          USERS = remoteUsers;
+          saveUsers(USERS);
+        }
+      }
+      const dataRaw = await gdriveDownloadFile(GDRIVE_DATA_FILE);
+      if (dataRaw) {
+        const remoteDB = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
+        if (remoteDB.events !== undefined) {
+          DB = remoteDB;
+          saveStorage(DB);
+        }
+      }
+      updateGDriveStatus('connected', 'Connected');
+    } catch(e) {
+      updateGDriveStatus('error', 'Sync failed');
+    }
+  }
+
+  // 3. Check for existing session
   const sess = getSession();
   if (sess) {
     const u = USERS.find(u => u.id === sess.userId);
     if (u) {
       currentUser = u;
       bootApp();
+      return;
     }
   }
   // Otherwise login screen stays visible
