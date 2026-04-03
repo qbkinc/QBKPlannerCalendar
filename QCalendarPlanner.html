@@ -1049,6 +1049,7 @@ hr { border: none; border-top: 1px solid var(--border); }
       <div class="login-logo-title">Q Calendar Planner</div>
       <div class="login-logo-sub">Sign in to continue</div>
     </div>
+    <div id="login-sync-status" style="font-size:11px;color:var(--text2);text-align:center;margin-bottom:8px;min-height:16px"></div>
     <div class="login-error" id="login-error">Incorrect username or password.</div>
     <div class="form-group">
       <label>Username</label>
@@ -1456,8 +1457,33 @@ const GDRIVE_DATA_FILE  = 'QCalendarPlanner_data.json';
 const GDRIVE_USERS_FILE = 'QCalendarPlanner_users.json';
 const GDRIVE_FOLDER_NAME = 'QCalendarPlanner';
 
+// Paste YOUR refresh token here so other users' browsers can pull data without their own OAuth.
+// To find it: open DevTools (F12) → Application → Local Storage → your site → gdriveConfig → copy refresh_token value
+const GDRIVE_SHARED_REFRESH_TOKEN = '1//01esJp9v8HTDpCgYIARAAGAESNwF-L9IrINzTiiucbvfRDZZeAhjuWChW88rc7_Z2tUhbsAo7_niwCyDALA3O885K7iZmZlMTyLY';
+
 let gdriveConfig = (() => { try { return JSON.parse(localStorage.getItem(GDRIVE_KEY)) || {}; } catch { return {}; } })();
 function saveGdriveConfig() { localStorage.setItem(GDRIVE_KEY, JSON.stringify(gdriveConfig)); }
+
+// Fetches a temporary access token using the shared refresh token (works on any browser)
+async function getSharedAccessToken() {
+  const refreshToken = GDRIVE_SHARED_REFRESH_TOKEN || gdriveConfig.refresh_token;
+  if (!refreshToken) return null;
+  try {
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id:     GDRIVE_CLIENT_ID,
+        client_secret: GDRIVE_CLIENT_SECRET,
+        refresh_token: refreshToken,
+        grant_type:    'refresh_token',
+      }),
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.access_token || null;
+  } catch(e) { return null; }
+}
 
 function loadData() {
   try {
@@ -3730,30 +3756,82 @@ function initGDriveModal() {
   }
 
   // 2. Pre-login sync — pull latest users and data from Drive
-  //    so other users can log in on a fresh browser
-  if (gdriveConfig.access_token) {
-    try {
+  //    Uses the shared refresh token so ANY browser can sync without their own OAuth
+  const loginStatus = document.getElementById('login-sync-status');
+  const setLoginStatus = (msg) => { if (loginStatus) loginStatus.textContent = msg; };
+
+  try {
+    setLoginStatus('⟳ Connecting to Google Drive...');
+    const sharedToken = await getSharedAccessToken();
+    if (!sharedToken) {
+      setLoginStatus('⚠ Could not get Drive token — using local data');
+    } else {
       updateGDriveStatus('syncing', 'Loading...');
-      const usersRaw = await gdriveDownloadFile(GDRIVE_USERS_FILE);
-      if (usersRaw) {
-        const remoteUsers = typeof usersRaw === 'string' ? JSON.parse(usersRaw) : usersRaw;
-        if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-          USERS = remoteUsers;
-          saveUsers(USERS);
+      setLoginStatus('⟳ Loading accounts...');
+
+      // Temporarily inject the token so Drive API helpers can use it
+      const prevToken  = gdriveConfig.access_token;
+      const prevExpiry = gdriveConfig.expires_at;
+      gdriveConfig.access_token = sharedToken;
+      gdriveConfig.expires_at   = Date.now() + 3500 * 1000;
+
+      try {
+        if (!gdriveConfig.folderId) {
+          setLoginStatus('⟳ Finding Drive folder...');
+          await ensureGDriveFolder();
         }
-      }
-      const dataRaw = await gdriveDownloadFile(GDRIVE_DATA_FILE);
-      if (dataRaw) {
-        const remoteDB = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
-        if (remoteDB.events !== undefined) {
-          DB = remoteDB;
-          saveStorage(DB);
+
+        setLoginStatus('⟳ Loading user accounts...');
+        const usersRaw = await gdriveDownloadFile(GDRIVE_USERS_FILE);
+        if (usersRaw) {
+          const remoteUsers = typeof usersRaw === 'string' ? JSON.parse(usersRaw) : usersRaw;
+          if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
+            USERS = remoteUsers;
+            localStorage.setItem(USERS_KEY, JSON.stringify(USERS));
+            setLoginStatus('✓ ' + USERS.length + ' accounts loaded — please sign in');
+          } else {
+            setLoginStatus('⚠ Users file empty — contact administrator');
+          }
+        } else {
+          setLoginStatus('⚠ No users file found in Drive — contact administrator');
         }
+
+        setLoginStatus(loginStatus.textContent.startsWith('✓')
+          ? loginStatus.textContent
+          : '⟳ Loading calendar data...');
+        const dataRaw = await gdriveDownloadFile(GDRIVE_DATA_FILE);
+        if (dataRaw) {
+          const remoteDB = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
+          if (remoteDB.events !== undefined) {
+            DB = remoteDB;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+          }
+        }
+
+        updateGDriveStatus('connected', 'Connected');
+        if (loginStatus.textContent.startsWith('✓')) {
+          // already set — leave it
+        } else {
+          setLoginStatus('✓ Ready — please sign in');
+        }
+      } catch(innerErr) {
+        setLoginStatus('⚠ Drive sync error: ' + innerErr.message);
+        console.warn('Pre-login Drive sync inner error:', innerErr);
+      } finally {
+        // Restore previous token state — don't clobber a real user session
+        if (prevToken) {
+          gdriveConfig.access_token = prevToken;
+          gdriveConfig.expires_at   = prevExpiry;
+        } else if (!GDRIVE_SHARED_REFRESH_TOKEN) {
+          delete gdriveConfig.access_token;
+          delete gdriveConfig.expires_at;
+        }
+        saveGdriveConfig();
       }
-      updateGDriveStatus('connected', 'Connected');
-    } catch(e) {
-      updateGDriveStatus('error', 'Sync failed');
     }
+  } catch(e) {
+    setLoginStatus('⚠ Drive error: ' + e.message);
+    console.warn('Pre-login Drive sync failed:', e.message);
   }
 
   // 3. Check for existing session
