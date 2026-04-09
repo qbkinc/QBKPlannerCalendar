@@ -1049,7 +1049,6 @@ hr { border: none; border-top: 1px solid var(--border); }
       <div class="login-logo-title">Q Calendar Planner</div>
       <div class="login-logo-sub">Sign in to continue</div>
     </div>
-    <div id="login-sync-status" style="font-size:11px;color:var(--text2);text-align:center;margin-bottom:8px;min-height:16px"></div>
     <div class="login-error" id="login-error">Incorrect username or password.</div>
     <div class="form-group">
       <label>Username</label>
@@ -1529,6 +1528,21 @@ function getDefaultData() {
 }
 
 let DB = loadData() || getDefaultData();
+
+// Auto-repair: fix any events where endDate < startDate (makes them invisible)
+(function repairInvertedDates() {
+  let fixed = 0;
+  DB.events.forEach(e => {
+    if (e.endDate && e.endDate < e.startDate) {
+      e.endDate = e.startDate;
+      fixed++;
+    }
+  });
+  if (fixed > 0) {
+    saveStorage(DB);
+    console.log(`Auto-repaired ${fixed} event(s) with inverted dates`);
+  }
+})();
 
 // Seed recurring rules from Excel data if first run
 if (DB.recurringRules.length === 0) {
@@ -2095,6 +2109,8 @@ function saveEvent() {
   const isRec = document.getElementById('evtIsRecurring').checked;
 
   if (!title || !startDate) { showToast('Please fill in Title and Start Date', 'error'); return; }
+  if (endDate && endDate !== startDate && endDate < startDate) { showToast('End date cannot be before start date', 'error'); return; }
+  if (endDate && endDate < startDate) { showToast('End date cannot be before start date', 'error'); return; }
 
   if (isRec) {
     const freq = document.getElementById('evtRecurFreq').value;
@@ -2455,21 +2471,70 @@ function handleImportFile(event) {
 }
 
 function parseImportCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  // Parse CSV respecting quoted fields (handles commas inside field values)
+  function parseLine(line) {
+    const result = [];
+    let cur = '', inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i+1] === '"') { cur += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        result.push(cur.trim()); cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  // Normalize dates to YYYY-MM-DD regardless of input format (MM/DD/YYYY, M/D/YYYY, etc.)
+  function normalizeDate(val) {
+    if (!val) return '';
+    val = val.trim();
+    // Already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    // MM/DD/YYYY or M/D/YYYY
+    const m = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
+    // MM-DD-YYYY
+    const m2 = val.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (m2) return m2[3] + '-' + m2[1].padStart(2,'0') + '-' + m2[2].padStart(2,'0');
+    return val; // return as-is and let validation catch it
+  }
+
+  const lines = text.trim().split(/\r?\n/);
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase());
   const events = [];
+  const skipped = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const vals = lines[i].split(',').map(v => v.trim());
+    if (!lines[i].trim()) continue;
+    const vals = parseLine(lines[i]);
     const obj = {};
     headers.forEach((h, idx) => obj[h] = vals[idx] || '');
-    if (obj.title && obj.startdate) {
+
+    const startDate = normalizeDate(obj.startdate);
+    let endDate = normalizeDate(obj.enddate) || startDate;
+
+    // Validate date format
+    if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      skipped.push(`Row ${i+1}: invalid start date "${obj.startdate}"`);
+      continue;
+    }
+
+    // Auto-fix inverted dates instead of silently breaking
+    if (endDate < startDate) endDate = startDate;
+
+    if (obj.title && startDate) {
       events.push({
         id: uid(),
         title: obj.title,
         category: obj.category || 'OTH',
-        startDate: obj.startdate,
-        endDate: obj.enddate || obj.startdate,
+        startDate,
+        endDate,
         startTime: obj.starttime || '',
         endTime: obj.endtime || '',
         location: obj.location || '',
@@ -2480,35 +2545,41 @@ function parseImportCSV(text) {
   }
 
   importBuffer = events;
-  renderImportPreview(events);
+  renderImportPreview(events, skipped);
 }
 
-function renderImportPreview(events) {
+function renderImportPreview(events, skipped = []) {
   if (events.length === 0) {
-    document.getElementById('importPreview').innerHTML = '<p style="color:var(--danger);margin-top:12px">No valid events found. Check your CSV format.</p>';
+    document.getElementById('importPreview').innerHTML = `
+      <p style="color:var(--danger);margin-top:12px">No valid events found. Check your CSV format.</p>
+      ${skipped.length ? `<ul style="font-size:12px;color:var(--danger);margin-top:8px">${skipped.map(s=>`<li>${s}</li>`).join('')}</ul>` : ''}
+    `;
     return;
   }
   const preview = document.getElementById('importPreview');
   preview.innerHTML = `
-    <p style="color:var(--success);margin-bottom:8px">✓ Found ${events.length} events to import</p>
+    <p style="color:var(--success);margin-bottom:8px">✓ Found ${events.length} event${events.length !== 1 ? 's' : ''} ready to import${skipped.length ? ` <span style="color:var(--warning);font-size:12px">(${skipped.length} row${skipped.length!==1?'s':''} skipped)</span>` : ''}</p>
     <div style="max-height:200px;overflow-y:auto">
     <table class="import-table">
-      <tr><th>Title</th><th>Category</th><th>Start Date</th><th>Time</th></tr>
+      <tr><th>Title</th><th>Category</th><th>Start Date</th><th>End Date</th><th>Time</th></tr>
       ${events.slice(0, 20).map(e => `<tr>
         <td>${e.title}</td>
         <td>${e.category}</td>
         <td>${e.startDate}</td>
+        <td>${e.endDate !== e.startDate ? e.endDate : '—'}</td>
         <td>${e.startTime || 'All day'}</td>
       </tr>`).join('')}
-      ${events.length > 20 ? `<tr><td colspan="4" style="color:var(--text2)">...and ${events.length - 20} more</td></tr>` : ''}
+      ${events.length > 20 ? `<tr><td colspan="5" style="color:var(--text2)">...and ${events.length - 20} more</td></tr>` : ''}
     </table>
     </div>
+    ${skipped.length ? `<details style="margin-top:8px;font-size:12px"><summary style="color:var(--warning);cursor:pointer">${skipped.length} skipped row${skipped.length!==1?'s':''} — click to see</summary><ul style="color:var(--warning);margin-top:4px">${skipped.map(s=>`<li>${s}</li>`).join('')}</ul></details>` : ''}
   `;
   document.getElementById('importConfirmBtn').style.display = 'inline-block';
 }
 
 function confirmImport() {
   if (importBuffer.length === 0) return;
+  const count = importBuffer.length; // save before clearing
   DB.events = [...DB.events, ...importBuffer];
   saveStorage(DB);
   importBuffer = [];
@@ -2516,7 +2587,7 @@ function confirmImport() {
   document.getElementById('importConfirmBtn').style.display = 'none';
   closeModal();
   render();
-  showToast(`${importBuffer.length || 'Events'} imported ✓`, 'success');
+  showToast(`${count} event${count !== 1 ? 's' : ''} imported ✓`, 'success');
 }
 
 // Drag & drop for import — attached at boot time to avoid null reference errors
@@ -3757,17 +3828,10 @@ function initGDriveModal() {
 
   // 2. Pre-login sync — pull latest users and data from Drive
   //    Uses the shared refresh token so ANY browser can sync without their own OAuth
-  const loginStatus = document.getElementById('login-sync-status');
-  const setLoginStatus = (msg) => { if (loginStatus) loginStatus.textContent = msg; };
-
   try {
-    setLoginStatus('⟳ Connecting to Google Drive...');
     const sharedToken = await getSharedAccessToken();
-    if (!sharedToken) {
-      setLoginStatus('⚠ Could not get Drive token — using local data');
-    } else {
+    if (sharedToken) {
       updateGDriveStatus('syncing', 'Loading...');
-      setLoginStatus('⟳ Loading accounts...');
 
       // Temporarily inject the token so Drive API helpers can use it
       const prevToken  = gdriveConfig.access_token;
@@ -3776,47 +3840,27 @@ function initGDriveModal() {
       gdriveConfig.expires_at   = Date.now() + 3500 * 1000;
 
       try {
-        if (!gdriveConfig.folderId) {
-          setLoginStatus('⟳ Finding Drive folder...');
-          await ensureGDriveFolder();
-        }
+        if (!gdriveConfig.folderId) await ensureGDriveFolder();
 
-        setLoginStatus('⟳ Loading user accounts...');
         const usersRaw = await gdriveDownloadFile(GDRIVE_USERS_FILE);
         if (usersRaw) {
           const remoteUsers = typeof usersRaw === 'string' ? JSON.parse(usersRaw) : usersRaw;
           if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
             USERS = remoteUsers;
-            localStorage.setItem(USERS_KEY, JSON.stringify(USERS));
-            setLoginStatus('✓ ' + USERS.length + ' accounts loaded — please sign in');
-          } else {
-            setLoginStatus('⚠ Users file empty — contact administrator');
+            localStorage.setItem('calendarUsers', JSON.stringify(USERS));
           }
-        } else {
-          setLoginStatus('⚠ No users file found in Drive — contact administrator');
         }
 
-        setLoginStatus(loginStatus.textContent.startsWith('✓')
-          ? loginStatus.textContent
-          : '⟳ Loading calendar data...');
         const dataRaw = await gdriveDownloadFile(GDRIVE_DATA_FILE);
         if (dataRaw) {
           const remoteDB = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
           if (remoteDB.events !== undefined) {
             DB = remoteDB;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+            localStorage.setItem('calendarData', JSON.stringify(DB));
           }
         }
 
         updateGDriveStatus('connected', 'Connected');
-        if (loginStatus.textContent.startsWith('✓')) {
-          // already set — leave it
-        } else {
-          setLoginStatus('✓ Ready — please sign in');
-        }
-      } catch(innerErr) {
-        setLoginStatus('⚠ Drive sync error: ' + innerErr.message);
-        console.warn('Pre-login Drive sync inner error:', innerErr);
       } finally {
         // Restore previous token state — don't clobber a real user session
         if (prevToken) {
@@ -3830,7 +3874,6 @@ function initGDriveModal() {
       }
     }
   } catch(e) {
-    setLoginStatus('⚠ Drive error: ' + e.message);
     console.warn('Pre-login Drive sync failed:', e.message);
   }
 
