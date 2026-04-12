@@ -1459,7 +1459,7 @@ const GDRIVE_FOLDER_NAME = 'QCalendarPlanner';
 
 // Paste YOUR refresh token here so other users' browsers can pull data without their own OAuth.
 // To find it: open DevTools (F12) → Application → Local Storage → your site → gdriveConfig → copy refresh_token value
-const GDRIVE_SHARED_REFRESH_TOKEN = '1//01esJp9v8HTDpCgYIARAAGAESNwF-L9IrINzTiiucbvfRDZZeAhjuWChW88rc7_Z2tUhbsAo7_niwCyDALA3O885K7iZmZlMTyLY';
+const GDRIVE_SHARED_REFRESH_TOKEN = '1//01CMW9WUpWGB6CgYIARAAGAESNwF-L9IrLQLZLZJyenCwpUvlDy7kOdQNHlHKFTa54YlvfJZxBAEUrBU2xLW8fVImWs0B2SXR5DE';
 
 let gdriveConfig = (() => { try { return JSON.parse(localStorage.getItem(GDRIVE_KEY)) || {}; } catch { return {}; } })();
 function saveGdriveConfig() { localStorage.setItem(GDRIVE_KEY, JSON.stringify(gdriveConfig)); }
